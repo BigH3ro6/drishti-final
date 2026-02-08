@@ -1,0 +1,23 @@
+# Mac & Linux System Files
+.DS_Store
+
+# Python / Flask
+backend/flask_service/venv/
+backend/flask_service/__pycache__/
+backend/flask_service/*.pyc
+backend/flask_service/.env
+
+# Flutter
+apps/user_mobile/.dart_tool/
+apps/user_mobile/.idea/
+apps/user_mobile/build/
+apps/user_mobile/ios/Pods/
+apps/user_mobile/ios/.symlinks/
+apps/user_mobile/android/.gradle
+
+# Firmware
+firmware/esp32-cam/.pio/
+firmware/esp32-cam/.vscode/
+
+# Machine Learning
+ml/datasets/
