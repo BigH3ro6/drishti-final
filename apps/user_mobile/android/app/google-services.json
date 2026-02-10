@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "714141327786",
+    "project_id": "drishti-app-cfa6b",
+    "storage_bucket": "drishti-app-cfa6b.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:714141327786:android:c76caa08b10ae282ba0bd3",
+        "android_client_info": {
+          "package_name": "com.example.user_mobile"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAWwZjlMkYNRKaJaHuqF8C3z6lSTPwIPdg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -39,6 +39,21 @@ app.*.symbols
 # Obfuscation related
 app.*.map.json
 
+# Python / Flask Secrets
+backend/flask_service/venv/
+backend/flask_service/__pycache__/
+backend/flask_service/.env
+backend/flask_service/certs/
+
+# Flutter / Firebase Secrets
+apps/user_mobile/android/app/google-services.json
+apps/user_mobile/ios/Runner/GoogleService-Info.plist
+lib/firebase_options.dart 
+# (Note: firebase_options.dart is optional to ignore, but safer for open source)
+
+# System Junk
+.DS_Store
+
 # Android Studio will place build artifacts here
 /android/app/debug
 /android/app/profile
