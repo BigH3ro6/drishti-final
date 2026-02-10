@@ -21,3 +21,10 @@ firmware/esp32-cam/.vscode/
 
 # Machine Learning
 ml/datasets/
+# Visual Studio / VS Code Junk
+.vs/
+.vscode/
+*.slnx
+*.sqlite
+CMakeWorkspaceSettings.json
+VSWorkspaceState.json

@@ -30,5 +30,8 @@ def create_app():
     @app.route('/')
     def index():
         return {"status": "Drishti Backend (Firebase) Online"}
+    # Register Blueprints
+    from .routes.main import main_bp
+    app.register_blueprint(main_bp)
 
     return app
