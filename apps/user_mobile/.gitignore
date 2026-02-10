@@ -48,10 +48,11 @@ backend/flask_service/certs/
 # Flutter / Firebase Secrets
 apps/user_mobile/android/app/google-services.json
 apps/user_mobile/ios/Runner/GoogleService-Info.plist
-lib/firebase_options.dart 
+backend/flask_service/certs/
+lib/firebase_options.dart
 # (Note: firebase_options.dart is optional to ignore, but safer for open source)
 
-# System Junk
+# System Junkgit status
 .DS_Store
 
 # Android Studio will place build artifacts here
