@@ -135,7 +135,7 @@ class SignupScreen extends StatelessWidget {
                     onTap: () {
                       Navigator.pushReplacement(
                       context,
-                      MaterialPageRoute(builder: (context) => const LoginScreen()),
+                      MaterialPageRoute(builder: (context) =>LoginScreen(userRole: userRole)),
                        );
                        debugPrint("Navigate to Login");
                        // Navigate to Login Screen

@@ -3,10 +3,13 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:user_mobile/core/app_colors.dart';
 import 'package:user_mobile/shared/glass_button.dart';
 import 'package:user_mobile/shared/glass_text_field.dart';
-import 'package:user_mobile/features/auth/screens/signup_screen.dart';
+import 'package:user_mobile/features/auth/screens/reset_password_screen.dart';
+import 'package:user_mobile/features/auth/screens/role_selection_screen.dart'; 
 
 class LoginScreen extends StatelessWidget {
-  const LoginScreen({super.key});
+  final String userRole; 
+
+  const LoginScreen({super.key, required this.userRole}); 
 
   @override
   Widget build(BuildContext context) {
@@ -71,7 +74,12 @@ class LoginScreen extends StatelessWidget {
                   alignment: Alignment.centerRight,
                   child: TextButton(
                     onPressed: () {
-                      // TODO: Navigate to Reset Password Screen
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const ResetPasswordScreen(),
+                        ),
+                      );
                       debugPrint("Forgot Password Clicked");
                     },
                     child: Text(
@@ -91,7 +99,7 @@ class LoginScreen extends StatelessWidget {
                   text: "Login",
                   isPrimary: true,
                   onPressed: () {
-                    debugPrint("Login Clicked");
+                    debugPrint("Login Clicked for role: $userRole");
                     // TODO: Connect to Firebase Auth Login
                   },
                 ),
@@ -108,12 +116,12 @@ class LoginScreen extends StatelessWidget {
                       ),
                       TextButton(
                         onPressed: () {
-                          // Navigate to Signup (Defaulting to Caregiver for now, 
-                          // or you can send them back to Role Selection)
-                          Navigator.push(
+                          Navigator.pushAndRemoveUntil(
                             context,
                             MaterialPageRoute(
-                                builder: (context) => const SignupScreen(userRole: "CAREGIVER")),
+                              builder: (context) => const RoleSelectionScreen(),
+                            ),
+                            (route) => false, // Clears the back history
                           );
                         },
                         child: Text(
