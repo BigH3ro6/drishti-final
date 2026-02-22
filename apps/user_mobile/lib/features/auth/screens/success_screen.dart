@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:user_mobile/core/app_colors.dart';
 import 'package:user_mobile/shared/glass_container.dart';
 import 'package:user_mobile/features/blind_mode/screens/blind_dashboard_screen.dart';
+import 'package:user_mobile/features/caregiver_mode/screens/add_user_type_screen.dart';
 
 class SuccessScreen extends StatefulWidget {
   final String userRole; // "BLIND" or "CAREGIVER"
@@ -12,6 +13,7 @@ class SuccessScreen extends StatefulWidget {
   @override
   State<SuccessScreen> createState() => _SuccessScreenState();
 }
+
 class _SuccessScreenState extends State<SuccessScreen> {
   @override
   void initState() {
@@ -24,11 +26,15 @@ class _SuccessScreenState extends State<SuccessScreen> {
           MaterialPageRoute(builder: (context) => const BlindDashboardScreen()),
         );
       } else {
-        // TODO: Navigate to Caregiver Setup/Dashboard
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const AddUserTypeScreen()),
+        );
         debugPrint("Navigate to Caregiver flow");
       }
     });
   }
+
   @override
   Widget build(BuildContext context) {
     // Navigate away automatically after 3 seconds
@@ -40,9 +46,7 @@ class _SuccessScreenState extends State<SuccessScreen> {
     return Scaffold(
       body: Container(
         width: double.infinity,
-        decoration: const BoxDecoration(
-          gradient: AppColors.mainGradient,
-        ),
+        decoration: const BoxDecoration(gradient: AppColors.mainGradient),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
@@ -51,9 +55,9 @@ class _SuccessScreenState extends State<SuccessScreen> {
               child: Column(
                 children: [
                   const Icon(
-                    Icons.check_circle_outline, 
-                    color: Colors.greenAccent, 
-                    size: 80
+                    Icons.check_circle_outline,
+                    color: Colors.greenAccent,
+                    size: 80,
                   ),
                   const SizedBox(height: 20),
                   Text(

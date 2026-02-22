@@ -1,15 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:user_mobile/core/app_colors.dart';
+import 'package:user_mobile/features/auth/screens/success_screen.dart';
 import 'package:user_mobile/shared/glass_button.dart';
 import 'package:user_mobile/shared/glass_text_field.dart';
 import 'package:user_mobile/features/auth/screens/reset_password_screen.dart';
-import 'package:user_mobile/features/auth/screens/role_selection_screen.dart'; 
+import 'package:user_mobile/features/auth/screens/role_selection_screen.dart';
 
 class LoginScreen extends StatelessWidget {
-  final String userRole; 
+  final String userRole;
 
-  const LoginScreen({super.key, required this.userRole}); 
+  const LoginScreen({super.key, required this.userRole});
 
   @override
   Widget build(BuildContext context) {
@@ -17,9 +18,7 @@ class LoginScreen extends StatelessWidget {
       body: Container(
         width: double.infinity,
         height: double.infinity,
-        decoration: const BoxDecoration(
-          gradient: AppColors.mainGradient,
-        ),
+        decoration: const BoxDecoration(gradient: AppColors.mainGradient),
         child: SafeArea(
           child: SingleChildScrollView(
             padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 20),
@@ -101,6 +100,12 @@ class LoginScreen extends StatelessWidget {
                   onPressed: () {
                     debugPrint("Login Clicked for role: $userRole");
                     // TODO: Connect to Firebase Auth Login
+                    Navigator.pushReplacement(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => SuccessScreen(userRole: userRole),
+                      ),
+                    );
                   },
                 ),
 
