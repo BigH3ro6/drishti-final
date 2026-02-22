@@ -2,8 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:user_mobile/core/app_colors.dart';
 import 'package:user_mobile/shared/glass_container.dart';
-import 'package:user_mobile/shared/glass_bottom_nav_bar.dart';
 import 'package:user_mobile/features/caregiver_mode/screens/map_tracking_screen.dart';
+import 'package:user_mobile/features/caregiver_mode/screens/voice_chat_list_screen.dart';
+import 'package:user_mobile/features/caregiver_mode/screens/emergency_alerts_screen.dart';
 
 class CaregiverDashboardScreen extends StatefulWidget {
   const CaregiverDashboardScreen({super.key});
@@ -14,8 +15,6 @@ class CaregiverDashboardScreen extends StatefulWidget {
 }
 
 class _CaregiverDashboardScreenState extends State<CaregiverDashboardScreen> {
-  int _currentIndex = 0;
-
   // Dummy data to simulate multiple connected users
   final List<Map<String, dynamic>> _connectedUsers = [
     {"name": "Kamal", "status": "Safe", "battery": "85%", "isOnline": true},
@@ -26,16 +25,6 @@ class _CaregiverDashboardScreenState extends State<CaregiverDashboardScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       extendBody: true,
-      bottomNavigationBar: SafeArea(
-        child: GlassBottomNavBar(
-          selectedIndex: _currentIndex,
-          onItemTapped: (index) {
-            setState(() {
-              _currentIndex = index;
-            });
-          },
-        ),
-      ),
       body: Container(
         width: double.infinity,
         height: double.infinity,
@@ -168,6 +157,12 @@ class _CaregiverDashboardScreenState extends State<CaregiverDashboardScreen> {
                         icon: Icons.mic_none_outlined,
                         color: Colors.orangeAccent,
                         onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const VoiceChatListScreen(),
+                            ),
+                          );
                           debugPrint("Open Voice Chat");
                         },
                       ),
@@ -178,6 +173,13 @@ class _CaregiverDashboardScreenState extends State<CaregiverDashboardScreen> {
                         icon: Icons.warning_amber_rounded,
                         color: Colors.redAccent,
                         onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) =>
+                                  const EmergencyAlertsScreen(),
+                            ),
+                          );
                           debugPrint("Open Alerts");
                         },
                       ),
