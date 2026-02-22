@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:user_mobile/features/auth/screens/role_selection_screen.dart';
+import 'package:user_mobile/features/caregiver_mode/screens/caregiver_dashboard_screen.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
 
@@ -19,7 +20,7 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       title: 'Drishti',
       theme: ThemeData(useMaterial3: true, primarySwatch: Colors.deepPurple),
-      home: const RoleSelectionScreen(),
+      home: const CaregiverDashboardScreen(),
     );
   }
 }

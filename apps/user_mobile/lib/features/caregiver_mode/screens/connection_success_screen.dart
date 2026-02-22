@@ -11,6 +11,7 @@ class ConnectionSuccessScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       extendBodyBehindAppBar: true,
+      extendBody: true, 
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -19,13 +20,11 @@ class ConnectionSuccessScreen extends StatelessWidget {
           onPressed: () => Navigator.pop(context),
         ),
       ),
-      // We use bottomNavigationBar property for the floating nav bar
       bottomNavigationBar: SafeArea(
         child: GlassBottomNavBar(
-          selectedIndex: 0, // Default to Home
+          selectedIndex: 0, 
           onItemTapped: (index) {
             debugPrint("Navigating to tab $index");
-            // TODO: Add actual tab navigation logic later
           },
         ),
       ),
@@ -39,9 +38,8 @@ class ConnectionSuccessScreen extends StatelessWidget {
             GlassContainer(
               padding: 40,
               child: Column(
-                mainAxisSize: MainAxisSize.min, // Hug contents
+                mainAxisSize: MainAxisSize.min, 
                 children: [
-                  // Huge Checkmark
                   Container(
                     padding: const EdgeInsets.all(15),
                     decoration: BoxDecoration(
