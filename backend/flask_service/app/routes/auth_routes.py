@@ -29,3 +29,19 @@ def sync_profile():
     }, merge=True)
     
     return jsonify({"message": "Profile saved successfully!", "uid": uid}), 200
+
+@auth_bp.route('/profile', methods=['GET'])
+@require_auth
+def get_profile():
+    # 1. Grab the secure User ID
+    uid = request.user_uid
+    
+    # 2. Go to the Firestore database and look for this specific user
+    user_doc = db.collection('users').document(uid).get()
+    
+    # 3. If they don't exist in the database, tell the frontend
+    if not user_doc.exists:
+        return jsonify({"error": "User not found"}), 404
+        
+    # 4. If they do exist, send all their data back to the app!
+    return jsonify(user_doc.to_dict()), 200
