@@ -1,6 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:user_mobile/core/app_colors.dart';
+import 'package:user_mobile/features/caregiver_mode/screens/about_drishti_screen.dart';
+import 'package:user_mobile/features/caregiver_mode/screens/caregiver_notifications_screen.dart';
+import 'package:user_mobile/features/caregiver_mode/screens/help_center_screen.dart';
+import 'package:user_mobile/features/caregiver_mode/screens/linked_users_screen.dart';
+import 'package:user_mobile/features/caregiver_mode/screens/personal_info_screen.dart';
+import 'package:user_mobile/features/caregiver_mode/screens/privacy_security_screen.dart';
 import 'package:user_mobile/shared/glass_container.dart';
 import 'package:user_mobile/features/caregiver_mode/screens/membership_screen.dart';
 
@@ -74,23 +80,27 @@ class _CaregiverProfileScreenState extends State<CaregiverProfileScreen> {
                       _buildDivider(),
                       _buildSettingsTile(
                         Icons.person_outline, 
-                        "Personal Information"
+                        "Personal Information",
+                        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const PersonalInfoScreen())),
                       ),
                       _buildDivider(),
                       _buildSettingsTile(
                         Icons.group_outlined, 
                         "Linked Users", 
-                        badgeCount: "3"
+                        badgeCount: "3",
+                        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const LinkedUsersScreen())),
                       ),
                       _buildDivider(),
                       _buildSettingsTile(
                         Icons.notifications_none, 
-                        "Notifications"
+                        "Notifications",
+                        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const CaregiverNotificationsScreen())),
                       ),
                       _buildDivider(),
                       _buildSettingsTile(
                         Icons.privacy_tip_outlined, 
-                        "Privacy & Security"
+                        "Privacy & Security",
+                        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const PrivacySecurityScreen())),
                       ),
                     ],
                   ),
@@ -116,12 +126,14 @@ class _CaregiverProfileScreenState extends State<CaregiverProfileScreen> {
                     children: [
                       _buildSettingsTile(
                         Icons.help_outline, 
-                        "Help Center"
+                        "Help Center",
+                        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const HelpCenterScreen())),
                       ),
                       _buildDivider(),
                       _buildSettingsTile(
                         Icons.info_outline, 
-                        "About Drishti"
+                        "About Drishti",
+                        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const AboutDrishtiScreen())),
                       ),
                     ],
                   ),

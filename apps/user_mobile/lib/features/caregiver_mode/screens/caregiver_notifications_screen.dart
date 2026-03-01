@@ -58,7 +58,7 @@ class _CaregiverNotificationsScreenState extends State<CaregiverNotificationsScr
         backgroundColor: Colors.transparent,
         elevation: 0,
         centerTitle: true,
-        automaticallyImplyLeading: false, // Hides the back button since it's a bottom nav tab
+        automaticallyImplyLeading: true, 
         title: Text(
           "Notifications",
           style: GoogleFonts.poppins(
