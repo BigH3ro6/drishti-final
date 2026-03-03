@@ -1,6 +1,6 @@
 from flask import Blueprint, request, jsonify
 from datetime import datetime
-from firebase_admin import firestore
+from firebase_admin import firestore, messaging
 
 safety_bp = Blueprint('safety', __name__)
 
@@ -31,7 +31,19 @@ def trigger_sos():
         db.collection('incidents').add(incident_data)
         
         # --- REQUIREMENT 3: Push Notifications ---
-        # (We will add the FCM notification code right here in the next step!)
+        #  the FCM notification code 
+        alert_message = messaging.Message(
+            notification=messaging.Notification(
+                title="🚨 EMERGENCY SOS 🚨",
+                body="The user has triggered an SOS alert! Immediate assistance required."
+            ),
+            # We send this to a specific "channel" that the Caregiver's phone will be listening to
+            topic=f"caregiver_alerts_{user_id}" 
+        )
+        
+        # Fire the notification!
+        messaging.send(alert_message)
+
         
         return jsonify({
             "message": "SOS triggered! User status updated and incident recorded."
@@ -40,7 +52,7 @@ def trigger_sos():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
     
-    
+
     
 @safety_bp.route('/location', methods=['POST'])
 def update_location():
