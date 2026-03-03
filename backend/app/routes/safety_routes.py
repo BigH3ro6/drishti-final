@@ -2,40 +2,40 @@ from flask import Blueprint, request, jsonify
 from datetime import datetime
 from firebase_admin import firestore
 
-# Create the Blueprint (The Doorway)
 safety_bp = Blueprint('safety', __name__)
 
 @safety_bp.route('/sos', methods=['POST'])
 def trigger_sos():
     try:
-        # 1. Receive the package from the mobile app
         data = request.get_json()
         
-        # 2. The Bouncer: Check if anything is missing
+        # The Bouncer: Check for missing data
         if not data or 'latitude' not in data or 'longitude' not in data or 'user_id' not in data:
             return jsonify({"error": "Missing GPS location or user ID!"}), 400
             
-        # 3. Open the connection to the Firebase Vault
         db = firestore.client()
+        user_id = data['user_id']
         
-        # 4. Prepare the official file to be saved (with a time stamp!)
-        sos_alert = {
-            "user_id": data['user_id'],
+        # --- REQUIREMENT 1: Update status = "SOS" in Firestore ---
+        # We use merge=True so we don't accidentally delete the user's other profile info!
+        db.collection('users').document(user_id).set({"status": "SOS"}, merge=True)
+        
+        # --- REQUIREMENT 2: Create a record in the 'incidents' collection ---
+        incident_data = {
+            "user_id": user_id,
             "latitude": data['latitude'],
             "longitude": data['longitude'],
             "timestamp": datetime.now(),
-            "status": "active"
+            "resolved": False
         }
+        db.collection('incidents').add(incident_data)
         
-        # 5. THE MAGIC: Save it permanently into a Firebase folder called 'sos_alerts'
-        db.collection('sos_alerts').add(sos_alert)
+        # --- REQUIREMENT 3: Push Notifications ---
+        # (We will add the FCM notification code right here in the next step!)
         
-        # 6. Tell the mobile app it worked!
         return jsonify({
-            "message": "SOS Alert safely locked in the vault!", 
-            "data": sos_alert
+            "message": "SOS triggered! User status updated and incident recorded."
         }), 201
         
     except Exception as e:
-        # If anything crashes, tell us what went wrong
         return jsonify({"error": str(e)}), 500
