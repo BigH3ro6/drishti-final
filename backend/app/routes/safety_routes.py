@@ -39,3 +39,38 @@ def trigger_sos():
         
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+    
+    
+    
+@safety_bp.route('/location', methods=['POST'])
+def update_location():
+    try:
+        data = request.get_json()
+        
+        # 1. The Bouncer: Check for missing data
+        if not data or 'latitude' not in data or 'longitude' not in data or 'user_id' not in data:
+            return jsonify({"error": "Missing GPS location or user ID!"}), 400
+            
+        db = firestore.client()
+        user_id = data['user_id']
+        
+        # 2. Prepare the tracking data
+        location_data = {
+            "latitude": data['latitude'],
+            "longitude": data['longitude'],
+            "last_updated": datetime.now()
+        }
+        
+        # 3. Save to 'tracking' collection (Overwriting the previous location)
+        db.collection('tracking').document(user_id).set(location_data, merge=True)
+        
+        return jsonify({
+            "message": "Location updated successfully!"
+        }), 200
+        
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+
+    
