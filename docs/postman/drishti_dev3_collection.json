@@ -1,0 +1,87 @@
+{
+  "info": {
+    "name": "Drishti API - Dev 3",
+    "description": "Voice Messaging & Weather API endpoints",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:5000",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Weather API",
+      "item": [
+        {
+          "name": "Get Weather",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/weather?lat=6.9271&lng=79.8612",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "weather"],
+              "query": [
+                {
+                  "key": "lat",
+                  "value": "6.9271"
+                },
+                {
+                  "key": "lng",
+                  "value": "79.8612"
+                }
+              ]
+            },
+            "description": "Get weather for current GPS coordinates"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Voice Messaging API",
+      "item": [
+        {
+          "name": "Upload Voice Message",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{baseUrl}}/api/voice/upload",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "voice", "upload"]
+            },
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "audio",
+                  "type": "file",
+                  "src": []
+                },
+                {
+                  "key": "sender_id",
+                  "value": "user_123",
+                  "type": "text"
+                },
+                {
+                  "key": "receiver_id",
+                  "value": "caregiver_456",
+                  "type": "text"
+                },
+                {
+                  "key": "chat_id",
+                  "value": "chat_789",
+                  "type": "text"
+                }
+              ]
+            },
+            "description": "Upload voice message to Firebase Storage"
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}
