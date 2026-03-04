@@ -19,9 +19,9 @@ def create_app():
         if cred_path:
             cred = credentials.Certificate(cred_path)
             firebase_admin.initialize_app(cred)
-            print("✅ Firebase Admin Initialized")
+            print("Firebase Admin Initialized")
         else:
-            print("❌ Error: GOOGLE_APPLICATION_CREDENTIALS not found in .env")
+            print("Error: GOOGLE_APPLICATION_CREDENTIALS not found in .env")
 
     # Initialize Firestore DB Client
     app.db = firestore.client()
