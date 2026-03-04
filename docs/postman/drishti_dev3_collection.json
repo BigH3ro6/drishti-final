@@ -1,7 +1,7 @@
 {
   "info": {
     "name": "Drishti API - Dev 3",
-    "description": "Voice Messaging & Weather API endpoints",
+    "description": "Voice Messaging (Cloudinary) & Weather API endpoints",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
@@ -12,6 +12,23 @@
     }
   ],
   "item": [
+    {
+      "name": "Health Check",
+      "item": [
+        {
+          "name": "Root",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/",
+              "host": ["{{baseUrl}}"]
+            },
+            "description": "Check if backend is running"
+          },
+          "response": []
+        }
+      ]
+    },
     {
       "name": "Weather API",
       "item": [
@@ -34,14 +51,14 @@
                 }
               ]
             },
-            "description": "Get weather for current GPS coordinates"
+            "description": "Get weather for current GPS coordinates. Returns TTS-friendly string."
           },
           "response": []
         }
       ]
     },
     {
-      "name": "Voice Messaging API",
+      "name": "Voice Messaging API (Cloudinary)",
       "item": [
         {
           "name": "Upload Voice Message",
@@ -58,26 +75,30 @@
                 {
                   "key": "audio",
                   "type": "file",
-                  "src": []
+                  "src": [],
+                  "description": "Audio file (mp3, wav, m4a)"
                 },
                 {
                   "key": "sender_id",
                   "value": "user_123",
-                  "type": "text"
+                  "type": "text",
+                  "description": "UID of the sender"
                 },
                 {
                   "key": "receiver_id",
                   "value": "caregiver_456",
-                  "type": "text"
+                  "type": "text",
+                  "description": "UID of the receiver"
                 },
                 {
                   "key": "chat_id",
                   "value": "chat_789",
-                  "type": "text"
+                  "type": "text",
+                  "description": "Chat session ID"
                 }
               ]
             },
-            "description": "Upload voice message to Firebase Storage"
+            "description": "Upload voice message to Cloudinary and save to Firestore"
           },
           "response": []
         }

@@ -1,6 +1,12 @@
 import os
 import requests
 from flask import Blueprint, request, jsonify, current_app
+from dotenv import load_dotenv
+
+env_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), '.env')
+print(f"Loading .env from: {env_path}")
+load_dotenv(env_path)
+
 from ..services.storage_service import upload_audio_file, save_message_to_firestore
 
 utility_bp = Blueprint('utility', __name__)
@@ -16,14 +22,14 @@ def get_weather():
     
     api_key = os.getenv('OPENWEATHERMAP_API_KEY')
     if not api_key:
-        return jsonify({"error": "OpenWeatherMap API key not configured"}), 500
+        return jsonify({"error": "OpenWeatherMap API key not configured", "debug": "Key not found in env"}), 500
     
     try:
         weather_url = f"https://api.openweathermap.org/data/2.5/weather?lat={lat}&lon={lng}&appid={api_key}&units=metric"
         response = requests.get(weather_url, timeout=10)
         
         if response.status_code != 200:
-            return jsonify({"error": "Failed to fetch weather data", "details": response.json()}), response.status_code
+            return jsonify({"error": "Failed to fetch weather data", "details": response.json(), "debug_key": api_key[:10]}), response.status_code
         
         data = response.json()
         
