@@ -82,4 +82,10 @@ def upload_voice():
         }), 200
         
     except Exception as e:
+        error_msg = str(e)
+        if "bucket does not exist" in error_msg:
+            return jsonify({
+                "error": "Firebase Storage bucket not configured",
+                "details": "Please enable Firebase Storage and update FIREBASE_STORAGE_BUCKET in .env"
+            }), 500
         return jsonify({"error": f"Upload failed: {str(e)}"}), 500
