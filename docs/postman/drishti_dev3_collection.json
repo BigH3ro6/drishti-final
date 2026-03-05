@@ -60,50 +60,69 @@
     {
       "name": "Voice Messaging API (Cloudinary)",
       "item": [
-{
-      "name": "Upload Voice Message",
-      "request": {
-        "method": "POST",
-        "url": {
-          "raw": "{{baseUrl}}/api/voice/upload",
-          "host": ["{{baseUrl}}"],
-          "path": ["api", "voice", "upload"]
+        {
+          "name": "Upload Voice Message",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{baseUrl}}/api/voice/upload",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "voice", "upload"]
+            },
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "audio",
+                  "type": "file",
+                  "src": [],
+                  "description": "Audio file (mp3, wav, m4a)"
+                },
+                {
+                  "key": "sender_id",
+                  "value": "user_123",
+                  "type": "text",
+                  "description": "UID of the sender"
+                },
+                {
+                  "key": "receiver_id",
+                  "value": "caregiver_456",
+                  "type": "text",
+                  "description": "UID of the receiver"
+                },
+                {
+                  "key": "chat_id",
+                  "value": "chat_789",
+                  "type": "text",
+                  "description": "Chat session ID"
+                }
+              ]
+            },
+            "description": "Upload voice message to Cloudinary and save to Firestore"
+          },
+          "response": []
         },
-        "body": {
-          "mode": "formdata",
-          "formdata": [
-            {
-              "key": "audio",
-              "type": "file",
-              "src": [],
-              "description": "Audio file (mp3, wav, m4a)"
+        {
+          "name": "Get Voice Messages",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/voice/messages?chat_id=chat_789",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "voice", "messages"],
+              "query": [
+                {
+                  "key": "chat_id",
+                  "value": "chat_789"
+                }
+              ]
             },
-            {
-              "key": "sender_id",
-              "value": "user_123",
-              "type": "text",
-              "description": "UID of the sender"
-            },
-            {
-              "key": "receiver_id",
-              "value": "caregiver_456",
-              "type": "text",
-              "description": "UID of the receiver"
-            },
-            {
-              "key": "chat_id",
-              "value": "chat_789",
-              "type": "text",
-              "description": "Chat session ID"
-            }
-          ]
-        },
-        "description": "Upload voice message to Cloudinary and save to Firestore"
-      },
-      "response": []
-    }
-  ]
-},
+            "description": "Get all voice messages for a specific chat"
+          },
+          "response": []
+        }
+      ]
+    },
     {
       "name": "Vision API (OCR)",
       "item": [

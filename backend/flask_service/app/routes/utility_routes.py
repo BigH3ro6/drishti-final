@@ -82,9 +82,16 @@ def upload_voice():
         
         return jsonify({
             "status": "success",
-            "message": "Voice message uploaded successfully",
-            "audio_url": upload_result['download_url'],
-            "message_id": message_id
+            "voice_message": {
+                "id": message_id,
+                "type": "voice",
+                "chat_id": chat_id,
+                "sender_id": sender_id,
+                "receiver_id": receiver_id,
+                "audio_url": upload_result['download_url'],
+                "duration": upload_result.get('duration'),
+                "timestamp": upload_result.get('timestamp')
+            }
         }), 200
         
     except Exception as e:
@@ -95,3 +102,30 @@ def upload_voice():
                 "details": "Please enable Firebase Storage and update FIREBASE_STORAGE_BUCKET in .env"
             }), 500
         return jsonify({"error": f"Upload failed: {str(e)}"}), 500
+
+
+@utility_bp.route('/api/voice/messages', methods=['GET'])
+def get_voice_messages():
+    chat_id = request.args.get('chat_id')
+    
+    if not chat_id:
+        return jsonify({"error": "Missing chat_id parameter"}), 400
+    
+    try:
+        db = current_app.db
+        messages_ref = db.collection('messages').where('chat_id', '==', chat_id).get()
+        
+        messages = []
+        for doc in messages_ref:
+            msg_data = doc.to_dict()
+            msg_data['id'] = doc.id
+            messages.append(msg_data)
+        
+        return jsonify({
+            "status": "success",
+            "messages": messages,
+            "count": len(messages)
+        }), 200
+        
+    except Exception as e:
+        return jsonify({"error": f"Failed to fetch messages: {str(e)}"}), 500
