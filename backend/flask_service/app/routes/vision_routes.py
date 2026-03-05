@@ -20,11 +20,25 @@ def read_text():
         nparr = np.frombuffer(image_data, np.uint8)
         image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
         
-        text = pytesseract.image_to_string(image)
+        if image is None:
+            return jsonify({"error": "Failed to decode image"}), 400
+        
+        gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+        
+        text1 = pytesseract.image_to_string(gray)
+        
+        thresh = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)[1]
+        text2 = pytesseract.image_to_string(thresh)
+        
+        blur = cv2.GaussianBlur(gray, (5, 5), 0)
+        text3 = pytesseract.image_to_string(blur)
+        
+        texts = [text1, text2, text3]
+        best_text = max(texts, key=lambda x: len(x.strip()))
         
         return jsonify({
             "status": "success",
-            "text": text.strip()
+            "text": best_text.strip() if best_text.strip() else "No text detected"
         }), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
