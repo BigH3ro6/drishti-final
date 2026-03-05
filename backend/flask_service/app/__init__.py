@@ -39,4 +39,7 @@ def create_app():
     from .routes.utility_routes import utility_bp
     app.register_blueprint(utility_bp)
 
+    from .routes.vision_routes import vision_bp
+    app.register_blueprint(vision_bp, url_prefix='/vision')
+
     return app

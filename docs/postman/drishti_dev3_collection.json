@@ -1,7 +1,7 @@
 {
   "info": {
     "name": "Drishti API - Dev 3",
-    "description": "Voice Messaging (Cloudinary) & Weather API endpoints",
+    "description": "Voice Messaging (Cloudinary), Weather API & Vision OCR endpoints",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
@@ -60,45 +60,72 @@
     {
       "name": "Voice Messaging API (Cloudinary)",
       "item": [
+{
+      "name": "Upload Voice Message",
+      "request": {
+        "method": "POST",
+        "url": {
+          "raw": "{{baseUrl}}/api/voice/upload",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "voice", "upload"]
+        },
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            {
+              "key": "audio",
+              "type": "file",
+              "src": [],
+              "description": "Audio file (mp3, wav, m4a)"
+            },
+            {
+              "key": "sender_id",
+              "value": "user_123",
+              "type": "text",
+              "description": "UID of the sender"
+            },
+            {
+              "key": "receiver_id",
+              "value": "caregiver_456",
+              "type": "text",
+              "description": "UID of the receiver"
+            },
+            {
+              "key": "chat_id",
+              "value": "chat_789",
+              "type": "text",
+              "description": "Chat session ID"
+            }
+          ]
+        },
+        "description": "Upload voice message to Cloudinary and save to Firestore"
+      },
+      "response": []
+    }
+  ]
+},
+    {
+      "name": "Vision API (OCR)",
+      "item": [
         {
-          "name": "Upload Voice Message",
+          "name": "Read Text from Image",
           "request": {
             "method": "POST",
             "url": {
-              "raw": "{{baseUrl}}/api/voice/upload",
+              "raw": "{{baseUrl}}/vision/read-text",
               "host": ["{{baseUrl}}"],
-              "path": ["api", "voice", "upload"]
+              "path": ["vision", "read-text"]
             },
             "body": {
-              "mode": "formdata",
-              "formdata": [
-                {
-                  "key": "audio",
-                  "type": "file",
-                  "src": [],
-                  "description": "Audio file (mp3, wav, m4a)"
-                },
-                {
-                  "key": "sender_id",
-                  "value": "user_123",
-                  "type": "text",
-                  "description": "UID of the sender"
-                },
-                {
-                  "key": "receiver_id",
-                  "value": "caregiver_456",
-                  "type": "text",
-                  "description": "UID of the receiver"
-                },
-                {
-                  "key": "chat_id",
-                  "value": "chat_789",
-                  "type": "text",
-                  "description": "Chat session ID"
+              "mode": "raw",
+              "raw": "{\n  \"image\": \"<base64_string>\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
                 }
-              ]
+              }
             },
-            "description": "Upload voice message to Cloudinary and save to Firestore"
+            "description": "Extract text from an image using Tesseract OCR. Send Base64 encoded image."
           },
           "response": []
         }
