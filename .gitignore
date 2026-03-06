@@ -20,7 +20,9 @@ firmware/esp32-cam/.pio/
 firmware/esp32-cam/.vscode/
 
 # Machine Learning
-ml/datasets/
+*.zip
+ml_pipeline_Obstacle_det/dataset/
+
 # Visual Studio / VS Code Junk
 .vs/
 .vscode/
