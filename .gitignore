@@ -32,3 +32,8 @@ CMakeWorkspaceSettings.json
 
 **/augmented_data/
 **/preprocessed_data/
+
+# YOLOv11 Training Outputs
+**/runs/
+**/*.pt
+**/Drishti_Training/
