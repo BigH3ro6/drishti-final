@@ -1,0 +1,17 @@
+DRISHTI DATASET AUDIT REPORT (PRE-AUGMENTATION)
+Generated on: 2026-03-07 00:08:57.601055
+----------------------------------------
+Valid Image-Label Pairs: 1556
+Missing Label Files: 0
+Empty Label Files: 1865
+----------------------------------------
+CLASS COUNTS (FROM PREVIOUS EDA):
+- Zebra cross: 560
+- Person: 448
+- Motorcycle: 358
+- Pothole: 331
+- Pole: 312
+- Tree: 281
+- Plant pot: 207
+----------------------------------------
+STATUS: Ready for balancing via Albumentations.
