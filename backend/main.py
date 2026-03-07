@@ -1,5 +1,6 @@
 from flask import Flask
 from app.routes.safety_routes import safety_bp
+from app.routes.vision_routes import vision_bp
 import firebase_admin
 from firebase_admin import credentials, firestore
 
@@ -19,6 +20,7 @@ app = Flask(__name__)
 
 # 3. Connect our safety doors
 app.register_blueprint(safety_bp, url_prefix='/api/safety')
+app.register_blueprint(vision_bp, url_prefix='/vision')
 
 # 4. A simple test route
 @app.route('/')
