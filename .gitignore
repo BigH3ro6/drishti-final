@@ -30,5 +30,5 @@ ml_pipeline_Obstacle_det/dataset/
 *.sqlite
 CMakeWorkspaceSettings.json
 
-
+**/augmented_data/
 **/preprocessed_data/
