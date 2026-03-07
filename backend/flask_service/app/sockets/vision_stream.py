@@ -6,8 +6,6 @@ import time
 
 socketio = SocketIO(cors_allowed_origins="*")
 
-# NEW Frame Dropper Settings 
-# Process max 5 frames per second (1 frame every 0.2 seconds) to save AI brain power
 PROCESS_INTERVAL = 0.2  
 last_frame_time = 0
 
@@ -24,31 +22,37 @@ def handle_disconnect():
 def handle_video_frame(data):
     global last_frame_time
     
-    # NEW: Frame Dropper Logic
     current_time = time.time()
     if (current_time - last_frame_time) < PROCESS_INTERVAL:
-        # It hasn't been 0.2 seconds yet. Throw this frame in the trash.
         return
         
-    # Update the clock for the next frame
     last_frame_time = current_time
 
     try:
-        # 1. Extract Base64
         image_data = data.get('image')
         if not image_data:
+            print("⚠️ Warning: Received empty image data.")
             return
 
-        # 2. Decode to Bytes
-        image_bytes = base64.b64decode(image_data)
+        # --- NEW: Robust Error Handling ---
+        # 1. Catch broken Base64 strings (like dropped Wi-Fi packets)
+        try:
+            image_bytes = base64.b64decode(image_data)
+        except Exception as b64_err:
+            print(f"⚠️ Base64 Decoding Error (dropped frame): {b64_err}")
+            return
         
-        # 3. Convert to Math Array
         np_arr = np.frombuffer(image_bytes, np.uint8)
         
-        # 4. Turn into OpenCV Image Matrix
+        # 2. Catch OpenCV failing to read the array
         frame = cv2.imdecode(np_arr, cv2.IMREAD_COLOR)
+        
+        if frame is None:
+            print("⚠️ OpenCV Error: Frame is corrupted or unreadable (dropped frame).")
+            return
 
-        print(f"✅ Processed a frame! Size: {frame.shape}")
+        print(f"✅ Processed a healthy frame! Size: {frame.shape}")
 
     except Exception as e:
-        print(f"❌ Error decoding frame: {e}")
+        # 3. Catch any other unexpected server crashes to keep the stream alive
+        print(f"❌ Unexpected Stream Error: {e}")
