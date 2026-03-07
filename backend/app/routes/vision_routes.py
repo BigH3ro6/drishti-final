@@ -30,7 +30,14 @@ def detect_obstacles():
         if file.filename == '':
             return jsonify({"error": "Empty image file"}), 400
 
-        # We will add the image reading and YOLO logic here in the next commit!
+        # Step B: Translate the binary file into an OpenCV image
+        file_bytes = np.frombuffer(file.read(), np.uint8)
+        img = cv2.imdecode(file_bytes, cv2.IMREAD_COLOR)
+
+        if img is None:
+            return jsonify({"error": "Failed to decode the image file. Is it corrupted?"}), 400
+            
+        # We will feed 'img' to the YOLO AI in the next commit!
         return jsonify({"message": "Image received successfully! Ready for AI."}), 200
 
     except Exception as e:
