@@ -16,3 +16,23 @@ print("AI Model loaded successfully!")
 @vision_bp.route('/test', methods=['GET'])
 def test_vision():
     return jsonify({"message": "Vision AI is awake and ready to see!"}), 200
+
+# 4. The Core Object Detection Endpoint
+@vision_bp.route('/detect', methods=['POST'])
+def detect_obstacles():
+    try:
+        # Step A: The Bouncer - Check if an image was actually sent
+        if 'image' not in request.files:
+            return jsonify({"error": "No image file provided"}), 400
+            
+        file = request.files['image']
+        
+        if file.filename == '':
+            return jsonify({"error": "Empty image file"}), 400
+
+        # We will add the image reading and YOLO logic here in the next commit!
+        return jsonify({"message": "Image received successfully! Ready for AI."}), 200
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+    
