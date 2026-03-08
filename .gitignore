@@ -28,3 +28,12 @@ ml/datasets/
 *.sqlite
 CMakeWorkspaceSettings.json
 VSWorkspaceState.json
+# Currency detection dataset
+vision/currency_detection/data/
+
+# Ignore training checkpoints
+vision/currency_detection/models/*.pt
+!vision/currency_detection/models/best.pt
+
+# Virtual environment
+.venv/
