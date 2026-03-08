@@ -38,3 +38,16 @@ drishti_final_dataset/
 **/runs/
 **/*.pt
 **/Drishti_Training/
+
+
+# Ignore the specific split and augmented folders
+**/drishti_final_split/
+
+
+
+# Ignore local datasets
+ml_pipeline_Obstacle_det/dataset/
+ml_pipeline_Obstacle_det/drishti_final_dataset/
+
+# Ignore the virtual environment (to keep repo small)
+drishti_env/
