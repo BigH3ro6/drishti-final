@@ -3,9 +3,32 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:user_mobile/core/app_colors.dart';
 import 'package:user_mobile/shared/glass_container.dart';
 import 'package:user_mobile/shared/glass_bottom_nav_bar.dart';
+import 'package:user_mobile/features/caregiver_mode/screens/caregiver_main_screen.dart'; 
 
-class ConnectionSuccessScreen extends StatelessWidget {
+class ConnectionSuccessScreen extends StatefulWidget {
   const ConnectionSuccessScreen({super.key});
+
+  @override
+  State<ConnectionSuccessScreen> createState() => _ConnectionSuccessScreenState();
+}
+
+class _ConnectionSuccessScreenState extends State<ConnectionSuccessScreen> {
+  
+  // 3. Added the automatic timer logic
+  @override
+  void initState() {
+    super.initState();
+    // Wait for 2 seconds, then navigate back to the dashboard
+    Future.delayed(const Duration(seconds: 2), () {
+      if (!mounted) return; // Always check if the screen is still open safely!
+      
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(builder: (context) => const CaregiverMainScreen()),
+        (route) => false, // This clears the history so they can't swipe back to the checkmark
+      );
+    });
+  }
 
   @override
   Widget build(BuildContext context) {

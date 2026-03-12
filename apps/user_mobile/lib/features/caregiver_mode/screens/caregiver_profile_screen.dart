@@ -7,6 +7,8 @@ import 'package:user_mobile/features/caregiver_mode/screens/help_center_screen.d
 import 'package:user_mobile/features/caregiver_mode/screens/linked_users_screen.dart';
 import 'package:user_mobile/features/caregiver_mode/screens/personal_info_screen.dart';
 import 'package:user_mobile/features/caregiver_mode/screens/privacy_security_screen.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:user_mobile/features/auth/screens/role_selection_screen.dart';
 import 'package:user_mobile/shared/glass_container.dart';
 import 'package:user_mobile/features/caregiver_mode/screens/membership_screen.dart';
 
@@ -142,8 +144,50 @@ class _CaregiverProfileScreenState extends State<CaregiverProfileScreen> {
 
                 // 4. Log Out Button
                 GestureDetector(
-                  onTap: () {
-                    debugPrint("Log out tapped");
+                  onTap: () async {
+                    // Show the confirmation pop-up first!
+                    showDialog(
+                      context: context,
+                      builder: (BuildContext dialogContext) {
+                        return AlertDialog(
+                          backgroundColor: const Color(0xFF1E1B4B), // Dark purple to match theme
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                          title: Text("Log Out", style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.bold)),
+                          content: Text("Are you sure you want to log out of Drishti?", style: GoogleFonts.poppins(color: Colors.white70)),
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.pop(dialogContext), // Close the pop-up
+                              child: Text("Cancel", style: GoogleFonts.poppins(color: Colors.white70, fontWeight: FontWeight.w600)),
+                            ),
+                            TextButton(
+                              onPressed: () async {
+                                Navigator.pop(dialogContext); // Close the pop-up first
+
+                                // 1. Show the loading circle
+                                showDialog(
+                                  context: context,
+                                  barrierDismissible: false,
+                                  builder: (context) => const Center(child: CircularProgressIndicator(color: Colors.redAccent)),
+                                );
+
+                                // 2. Sign out of Firebase
+                                await FirebaseAuth.instance.signOut();
+
+                                // 3. Destroy history and jump to the Start screen
+                                if (context.mounted) {
+                                  Navigator.pushAndRemoveUntil(
+                                    context,
+                                    MaterialPageRoute(builder: (context) => const RoleSelectionScreen()),
+                                    (route) => false,
+                                  );
+                                }
+                              },
+                              child: Text("Log Out", style: GoogleFonts.poppins(color: Colors.redAccent, fontWeight: FontWeight.bold)),
+                            ),
+                          ],
+                        );
+                      },
+                    );
                   },
                   child: GlassContainer(
                     padding: 15,
@@ -164,8 +208,6 @@ class _CaregiverProfileScreenState extends State<CaregiverProfileScreen> {
                     ),
                   ),
                 ),
-                
-                // Extra padding to ensure we can scroll past the bottom nav bar
                 const SizedBox(height: 100),
               ],
             ),

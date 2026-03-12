@@ -11,14 +11,6 @@ class AddUserTypeScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       extendBodyBehindAppBar: true,
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
-          onPressed: () => Navigator.pop(context),
-        ),
-      ),
       body: Container(
         width: double.infinity,
         height: double.infinity,
@@ -51,7 +43,7 @@ class AddUserTypeScreen extends StatelessWidget {
                   context: context,
                   title: "ONE PERSON",
                   subtitle: "Set up and manage for one individual",
-                  icon: Icons.person, // Replace with your image asset later
+                  icon: Icons.person,
                   isGroup: false,
                 ),
 
@@ -62,7 +54,7 @@ class AddUserTypeScreen extends StatelessWidget {
                   context: context,
                   title: "GROUP",
                   subtitle: "Set up and manage for a group of five",
-                  icon: Icons.group, // Replace with your image asset later
+                  icon: Icons.group,
                   isGroup: true,
                 ),
               ],
@@ -95,7 +87,6 @@ class AddUserTypeScreen extends StatelessWidget {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              // Placeholder for the Figma illustrations
               CircleAvatar(
                 radius: 40,
                 backgroundColor: Colors.white.withOpacity(0.2),
