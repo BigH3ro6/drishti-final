@@ -1,0 +1,81 @@
+import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:user_mobile/core/app_colors.dart';
+import 'package:user_mobile/shared/glass_container.dart';
+import 'package:user_mobile/features/blind_mode/screens/blind_dashboard_screen.dart';
+import 'package:user_mobile/features/caregiver_mode/screens/add_user_type_screen.dart';
+import 'package:user_mobile/features/caregiver_mode/screens/caregiver_main_screen.dart';
+import 'package:user_mobile/features/blind_mode/screens/glasses_connection_screen.dart';
+
+class SuccessScreen extends StatefulWidget {
+  final String userRole; 
+
+  const SuccessScreen({super.key, required this.userRole});
+
+  @override
+  State<SuccessScreen> createState() => _SuccessScreenState();
+}
+
+class _SuccessScreenState extends State<SuccessScreen> {
+  @override
+  void initState() {
+    super.initState();
+    // Navigate away automatically after 2 seconds
+    Future.delayed(const Duration(seconds: 2), () {
+      // 1. Always check if the screen is still open before navigating!
+      if (!mounted) return;
+
+      // 2. Clear history and route based on role
+      if (widget.userRole == "BLIND") {
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (context) => const BlindDashboardScreen()),
+          (route) => false, // This destroys the back button history
+        );
+      } else {
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (context) => const AddUserTypeScreen()),
+          (route) => false,
+        );
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) { 
+    return Scaffold(
+      body: Container(
+        width: double.infinity,
+        decoration: const BoxDecoration(gradient: AppColors.mainGradient),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            GlassContainer(
+              padding: 40,
+              child: Column(
+                children: [
+                  const Icon(
+                    Icons.check_circle_outline,
+                    color: Colors.greenAccent,
+                    size: 80,
+                  ),
+                  const SizedBox(height: 20),
+                  Text(
+                    "Account Created\nSuccessfully!",
+                    textAlign: TextAlign.center,
+                    style: GoogleFonts.poppins(
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
