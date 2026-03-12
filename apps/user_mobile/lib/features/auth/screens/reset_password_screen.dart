@@ -4,9 +4,80 @@ import 'package:user_mobile/core/app_colors.dart';
 import 'package:user_mobile/shared/glass_button.dart';
 import 'package:user_mobile/shared/glass_text_field.dart';
 import 'package:user_mobile/shared/glass_container.dart';
+import 'package:firebase_auth/firebase_auth.dart'; 
 
-class ResetPasswordScreen extends StatelessWidget {
+class ResetPasswordScreen extends StatefulWidget {
   const ResetPasswordScreen({super.key});
+
+  @override
+  State<ResetPasswordScreen> createState() => _ResetPasswordScreenState();
+}
+
+class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
+  // 1. Controller to read the email text
+  final TextEditingController _emailController = TextEditingController();
+  bool _isLoading = false;
+
+  @override
+  void dispose() {
+    _emailController.dispose();
+    super.dispose();
+  }
+
+  // 2. The Firebase Reset Password Function
+  Future<void> _resetPassword() async {
+    final email = _emailController.text.trim();
+
+    // Check if the field is empty
+    if (email.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Please enter your email address."),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      // Tell Firebase to send the recovery email
+      await FirebaseAuth.instance.sendPasswordResetEmail(email: email);
+
+      if (mounted) {
+        // Show a success message
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("Password reset link sent! Check your email."),
+            backgroundColor: Colors.green, 
+          ),
+        );
+        // Pop the screen to go back to the Login page automatically
+        Navigator.pop(context); 
+      }
+    } on FirebaseAuthException catch (e) {
+      // Handle formatting errors
+      String errorMessage = 'An error occurred. Please try again.';
+      if (e.code == 'invalid-email') {
+        errorMessage = 'The email address is badly formatted.';
+      }
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(errorMessage), backgroundColor: Colors.red),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -60,21 +131,19 @@ class ResetPasswordScreen extends StatelessWidget {
                       ),
                       const SizedBox(height: 40),
 
-                      // 3. Email Input
-                      const GlassTextField(
+                      // 3. Email Input 
+                      GlassTextField(
+                        controller: _emailController, 
                         hintText: "Enter your email",
                         icon: Icons.email_outlined,
                       ),
                       const SizedBox(height: 30),
 
-                      // 4. Submit Button
+                      // 4. Submit Button 
                       GlassButton(
-                        text: "Send Recovery Code",
+                        text: _isLoading ? "Sending..." : "Send Recovery Code",
                         isPrimary: true,
-                        onPressed: () {
-                          // TODO: Trigger Firebase Password Reset
-                          debugPrint("Send Recovery Code Clicked");
-                        },
+                        onPressed: _isLoading ? () {} : _resetPassword,
                       ),
                     ],
                   ),

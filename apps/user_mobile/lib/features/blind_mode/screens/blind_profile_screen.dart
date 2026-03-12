@@ -6,6 +6,8 @@ import 'package:user_mobile/features/blind_mode/screens/blind_personal_info_scre
 import 'package:user_mobile/features/blind_mode/screens/blind_linked_caregivers_screen.dart';
 import 'package:user_mobile/features/blind_mode/screens/smart_glasses_settings_screen.dart';
 import 'package:user_mobile/features/blind_mode/screens/accessibility_prefs_screen.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:user_mobile/features/auth/screens/role_selection_screen.dart';
 import 'package:user_mobile/shared/glass_container.dart';
 
 class BlindProfileScreen extends StatelessWidget {
@@ -66,7 +68,7 @@ class BlindProfileScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 30),
 
-                // Handover Button (Takes them to the VI Dashboard)
+                // Handover Button 
                 ElevatedButton.icon(
                   onPressed: () {
                     Navigator.pushReplacement(
@@ -77,7 +79,7 @@ class BlindProfileScreen extends StatelessWidget {
                   icon: const Icon(Icons.visibility),
                   label: Text("Start Assistant Mode", style: GoogleFonts.poppins(fontWeight: FontWeight.bold)),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFFACC15), // High contrast yellow
+                    backgroundColor: const Color(0xFFFACC15), 
                     foregroundColor: Colors.black,
                     minimumSize: const Size(double.infinity, 60),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
@@ -87,7 +89,48 @@ class BlindProfileScreen extends StatelessWidget {
                 
                 // Log Out
                 TextButton.icon(
-                  onPressed: () {},
+                  onPressed: () async {
+                    // Show the confirmation pop-up first!
+                    showDialog(
+                      context: context,
+                      builder: (BuildContext dialogContext) {
+                        return AlertDialog(
+                          backgroundColor: const Color(0xFF1E1B4B), 
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                          title: Text("Log Out", style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.bold)),
+                          content: Text("Are you sure you want to log out of Drishti?", style: GoogleFonts.poppins(color: Colors.white70)),
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.pop(dialogContext), 
+                              child: Text("Cancel", style: GoogleFonts.poppins(color: Colors.white70, fontWeight: FontWeight.w600)),
+                            ),
+                            TextButton(
+                              onPressed: () async {
+                                Navigator.pop(dialogContext); 
+
+                                showDialog(
+                                  context: context,
+                                  barrierDismissible: false,
+                                  builder: (context) => const Center(child: CircularProgressIndicator(color: Colors.redAccent)),
+                                );
+
+                                await FirebaseAuth.instance.signOut();
+
+                                if (context.mounted) {
+                                  Navigator.pushAndRemoveUntil(
+                                    context,
+                                    MaterialPageRoute(builder: (context) => const RoleSelectionScreen()),
+                                    (route) => false,
+                                  );
+                                }
+                              },
+                              child: Text("Log Out", style: GoogleFonts.poppins(color: Colors.redAccent, fontWeight: FontWeight.bold)),
+                            ),
+                          ],
+                        );
+                      },
+                    );
+                  },
                   icon: const Icon(Icons.logout, color: Colors.redAccent),
                   label: Text("Log Out", style: GoogleFonts.poppins(color: Colors.redAccent, fontWeight: FontWeight.bold)),
                 )

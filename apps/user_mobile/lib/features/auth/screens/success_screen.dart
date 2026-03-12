@@ -4,9 +4,11 @@ import 'package:user_mobile/core/app_colors.dart';
 import 'package:user_mobile/shared/glass_container.dart';
 import 'package:user_mobile/features/blind_mode/screens/blind_dashboard_screen.dart';
 import 'package:user_mobile/features/caregiver_mode/screens/add_user_type_screen.dart';
+import 'package:user_mobile/features/caregiver_mode/screens/caregiver_main_screen.dart';
+import 'package:user_mobile/features/blind_mode/screens/glasses_connection_screen.dart';
 
 class SuccessScreen extends StatefulWidget {
-  final String userRole; // "BLIND" or "CAREGIVER"
+  final String userRole; 
 
   const SuccessScreen({super.key, required this.userRole});
 
@@ -20,29 +22,28 @@ class _SuccessScreenState extends State<SuccessScreen> {
     super.initState();
     // Navigate away automatically after 2 seconds
     Future.delayed(const Duration(seconds: 2), () {
+      // 1. Always check if the screen is still open before navigating!
+      if (!mounted) return;
+
+      // 2. Clear history and route based on role
       if (widget.userRole == "BLIND") {
-        Navigator.pushReplacement(
+        Navigator.pushAndRemoveUntil(
           context,
           MaterialPageRoute(builder: (context) => const BlindDashboardScreen()),
+          (route) => false, // This destroys the back button history
         );
       } else {
-        Navigator.pushReplacement(
+        Navigator.pushAndRemoveUntil(
           context,
           MaterialPageRoute(builder: (context) => const AddUserTypeScreen()),
+          (route) => false,
         );
-        debugPrint("Navigate to Caregiver flow");
       }
     });
   }
 
   @override
-  Widget build(BuildContext context) {
-    // Navigate away automatically after 3 seconds
-    Future.delayed(const Duration(seconds: 3), () {
-      // TODO: Replace with navigation to the Main Dashboard
-      debugPrint("Navigating to Dashboard...");
-    });
-
+  Widget build(BuildContext context) { 
     return Scaffold(
       body: Container(
         width: double.infinity,

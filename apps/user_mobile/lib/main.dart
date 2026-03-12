@@ -1,16 +1,22 @@
 import 'package:flutter/material.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 import 'package:user_mobile/features/auth/screens/role_selection_screen.dart';
 import 'package:user_mobile/features/blind_mode/screens/blind_dashboard_screen.dart';
 import 'package:user_mobile/features/blind_mode/screens/glasses_connection_screen.dart';
 import 'package:user_mobile/features/caregiver_mode/screens/caregiver_dashboard_screen.dart';
 import 'package:user_mobile/features/caregiver_mode/screens/caregiver_profile_screen.dart';
 import 'package:user_mobile/features/caregiver_mode/screens/caregiver_main_screen.dart';
+import 'package:user_mobile/features/auth/screens/auth_gate.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+
+  await GoogleSignIn.instance.initialize(
+    serverClientId: '714141327786-dem8o2esk5bj9nmrb106sjf6p2kn0rg7.apps.googleusercontent.com', 
+  );
 
   runApp(const MyApp());
 }
@@ -24,10 +30,11 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       title: 'Drishti',
       theme: ThemeData(useMaterial3: true, primarySwatch: Colors.deepPurple),
+      home: const AuthGate(),
       // home: const CaregiverMainScreen(),
       // home: const RoleSelectionScreen(),
       // home: const BlindDashboardScreen(),
-      home: const GlassesConnectionScreen(),
+      // home: const GlassesConnectionScreen(),
       
     );
   }
