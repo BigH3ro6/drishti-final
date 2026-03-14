@@ -37,11 +37,12 @@ def detect_obstacles():
         if img is None:
             return jsonify({"error": "Failed to decode the image file. Is it corrupted?"}), 400
         
-        #C-Feed the pic to the yolov8 brain
+        # Step C: Feed the picture to the YOLOv8 Brain
+        #  The AI looks at the photo!
         results = model(img)
-            
-        # We will feed 'img' to the YOLO AI in the next commit!
-        return jsonify({"message": "Image received successfully! Ready for AI."}), 200
+        
+        # extract the exact objects it found in the next commit!
+        return jsonify({"message": "AI successfully looked at the image!"}), 200
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
