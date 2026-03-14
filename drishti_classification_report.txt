@@ -1,0 +1,25 @@
+
+=============================================
+         DRISHTI: CLASSIFICATION METRICS
+=============================================
+  Accuracy:        0.8123  (81.23%)
+  F1 Score:        0.8110  (81.10%)
+  Kappa Score:     0.7805
+  MCC Score:       0.7818
+=============================================
+
+Per-Class Classification Report:
+              precision    recall  f1-score   support
+
+  motorcycle       0.65      0.74      0.69       240
+      person       0.88      0.92      0.90       280
+   plant pot       0.94      0.94      0.94       263
+        pole       0.84      0.56      0.67       209
+     pothole       0.95      0.92      0.94       217
+        tree       0.69      0.82      0.75       203
+ zebra cross       0.76      0.73      0.74       224
+
+    accuracy                           0.81      1636
+   macro avg       0.82      0.80      0.80      1636
+weighted avg       0.82      0.81      0.81      1636
+
