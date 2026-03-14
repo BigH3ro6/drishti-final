@@ -52,13 +52,26 @@ def detect_obstacles():
                 
                 # Only keep obstacles the AI is more than 50% sure about
                 if confidence > 0.5:
+                    # Step E: Distance Math
+                    # Extract the box coordinates: x1 (left), y1 (top), x2 (right), y2 (bottom)
+                    x1, y1, x2, y2 = box.xyxy[0].tolist()
+                    
+                    # Calculate how tall the object is in pixels
+                    pixel_height = y2 - y1
+                    
+                    #  Distance = (Real Height * Focal Length) / Pixel Height
+                    #  constant '1000' as a baseline multiplier for the camera lens
+                    distance_meters = round(1000 / (pixel_height + 0.0001), 2)
+                    
                     detected_objects.append({
                         "class_id": class_id,
-                        "confidence": round(confidence, 2)
+                        "confidence": round(confidence, 2),
+                        "distance_meters": distance_meters,
+                        "box_coordinates": [round(x1), round(y1), round(x2), round(y2)]
                     })
-        
-        # We will calculate distance in the next commit!
-        return jsonify({"obstacles_found": len(detected_objects), "data": detected_objects}), 200
+                    
+        # We will calculate Left/Right/Center positioning in the next commit!
+        return jsonify({"message": "Objects and distances calculated!", "data": detected_objects}), 200
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
