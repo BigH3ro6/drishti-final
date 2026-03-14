@@ -86,8 +86,15 @@ def detect_obstacles():
                         "box_coordinates": [round(x1), round(y1), round(x2), round(y2)]
                     })
                     
-        # We will do one final cleanup in the very last commit!
-        return jsonify({"message": "Vision AI fully operational!", "data": detected_objects}), 200
+        # Step H: Final Polish - Sort obstacles so the closest ones are first!
+        detected_objects.sort(key=lambda x: x['distance_meters'])
+                    
+        return jsonify({
+            "status": "success",
+            "message": "Vision AI fully operational!",
+            "total_obstacles": len(detected_objects), 
+            "data": detected_objects
+        }), 200
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
