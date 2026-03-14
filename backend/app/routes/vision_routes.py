@@ -74,7 +74,11 @@ def detect_obstacles():
                     else:
                         position = "Center"
                     
+                    # Step G: Translate the Class ID to a real English word
+                    object_name = model.names[class_id]
+                    
                     detected_objects.append({
+                        "object_name": object_name,
                         "class_id": class_id,
                         "confidence": round(confidence, 2),
                         "distance_meters": distance_meters,
@@ -82,8 +86,8 @@ def detect_obstacles():
                         "box_coordinates": [round(x1), round(y1), round(x2), round(y2)]
                     })
                     
-        # We will map the Class IDs to real English words in the next commit!
-        return jsonify({"message": "Objects mapped in 3D space!", "data": detected_objects}), 200
+        # We will do one final cleanup in the very last commit!
+        return jsonify({"message": "Vision AI fully operational!", "data": detected_objects}), 200
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
