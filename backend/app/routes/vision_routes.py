@@ -63,15 +63,27 @@ def detect_obstacles():
                     #  constant '1000' as a baseline multiplier for the camera lens
                     distance_meters = round(1000 / (pixel_height + 0.0001), 2)
                     
+                    # Step F: Left / Center / Right positioning
+                    image_width = img.shape[1]
+                    box_center_x = (x1 + x2) / 2
+                    
+                    if box_center_x < (image_width / 3):
+                        position = "Left"
+                    elif box_center_x > (2 * image_width / 3):
+                        position = "Right"
+                    else:
+                        position = "Center"
+                    
                     detected_objects.append({
                         "class_id": class_id,
                         "confidence": round(confidence, 2),
                         "distance_meters": distance_meters,
+                        "position": position,
                         "box_coordinates": [round(x1), round(y1), round(x2), round(y2)]
                     })
                     
-        # We will calculate Left/Right/Center positioning in the next commit!
-        return jsonify({"message": "Objects and distances calculated!", "data": detected_objects}), 200
+        # We will map the Class IDs to real English words in the next commit!
+        return jsonify({"message": "Objects mapped in 3D space!", "data": detected_objects}), 200
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
