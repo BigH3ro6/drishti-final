@@ -51,3 +51,10 @@ ml_pipeline_Obstacle_det/drishti_final_dataset/
 
 # Ignore the virtual environment (to keep repo small)
 drishti_env/
+
+# Ignore raw test videos
+vedios/
+
+# Ignore generated detection outputs
+output_videos/
+
