@@ -41,8 +41,24 @@ def detect_obstacles():
         #  The AI looks at the photo!
         results = model(img)
         
-        # extract the exact objects it found in the next commit!
-        return jsonify({"message": "AI successfully looked at the image!"}), 200
+        # Step D: Extract the detected obstacles
+        detected_objects = []
+        
+        # The AI might find multiple things, so we loop through them
+        for r in results:
+            for box in r.boxes:
+                class_id = int(box.cls[0])
+                confidence = float(box.conf[0])
+                
+                # Only keep obstacles the AI is more than 50% sure about
+                if confidence > 0.5:
+                    detected_objects.append({
+                        "class_id": class_id,
+                        "confidence": round(confidence, 2)
+                    })
+        
+        # We will calculate distance in the next commit!
+        return jsonify({"obstacles_found": len(detected_objects), "data": detected_objects}), 200
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
