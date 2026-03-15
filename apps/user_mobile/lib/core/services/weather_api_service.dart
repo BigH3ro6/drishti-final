@@ -4,8 +4,6 @@ import 'package:flutter/material.dart';
 import 'dart:convert';
 
 class WeatherApiService {
-  // ⚠️ IMPORTANT: Replace this IP with your computer's actual IPv4 address!
-  // Example: 'http://192.168.1.45:5000'
   static const String backendUrl = 'http://192.168.1.7:5000';
 
   Future<String> fetchCurrentWeather() async {
@@ -40,7 +38,6 @@ class WeatherApiService {
         debugPrint("Backend Weather Response: $jsonResponse");
 
         // 2. Extract just the text sentence. 
-        // Backend devs usually name this key 'message', 'weather', or 'text'.
         String spokenWeather = jsonResponse['message'] 
             ?? jsonResponse['weather'] 
             ?? jsonResponse['text'] 
