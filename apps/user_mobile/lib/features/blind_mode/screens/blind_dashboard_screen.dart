@@ -4,6 +4,7 @@ import 'package:user_mobile/core/app_colors.dart';
 import 'package:user_mobile/core/services/voice_assistant_service.dart';
 import 'package:user_mobile/features/blind_mode/screens/blind_profile_screen.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:user_mobile/core/services/weather_api_service.dart';
 
 class BlindDashboardScreen extends StatefulWidget {
   const BlindDashboardScreen({super.key});
@@ -45,7 +46,7 @@ class _BlindDashboardScreenState extends State<BlindDashboardScreen> {
   }
 
   // Maps recognized voice commands to specific app features
-  void _handleVoiceCommand(String command) {
+  void _handleVoiceCommand(String command) async{
     setState(() => _isListeningUI = false); 
 
     switch (command) {
@@ -59,7 +60,15 @@ class _BlindDashboardScreenState extends State<BlindDashboardScreen> {
         _showDummyAction("🗺️ Opening GPS Navigation...");
         break;
       case "weather":
+        // 1. Tell the user we are working on it
         _showDummyAction("🌤️ Fetching Weather...");
+        await _voiceService.speak("Checking the weather for your location...");
+        
+        // 2. Call the backend API
+        String weatherResult = await WeatherApiService().fetchCurrentWeather();
+        
+        // 3. Speak the result out loud!
+        await _voiceService.speak(weatherResult);
         break;
       case "message_caregiver":
         _showDummyAction("🎙️ Opening Voice Recorder...");

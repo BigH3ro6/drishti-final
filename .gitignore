@@ -31,3 +31,11 @@ CMakeWorkspaceSettings.json
 VSWorkspaceState.json
 
 *.json
+# Environments
+venv/
+env/
+.env
+
+# Cache files
+__pycache__/
+*.pyc
