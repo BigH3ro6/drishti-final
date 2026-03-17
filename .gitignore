@@ -6,6 +6,7 @@ backend/flask_service/venv/
 backend/flask_service/__pycache__/
 backend/flask_service/*.pyc
 backend/flask_service/.env
+backend/flask_service/certs/serviceAccountKey
 
 # Flutter
 apps/user_mobile/.dart_tool/
@@ -28,3 +29,5 @@ ml/datasets/
 *.sqlite
 CMakeWorkspaceSettings.json
 VSWorkspaceState.json
+
+*.json
