@@ -1,5 +1,7 @@
 import socketio
 import time
+import base64
+import os
 
 # 1. Create a fake mobile app client
 sio = socketio.Client()
@@ -20,28 +22,32 @@ def on_ai_response(data):
     print(f"🤖 AI Prediction Received: {data['obstacle']} detected {data['distance']} away, {data['direction']}.")
 
 def simulate_streaming():
-    # This is a real Base64 string of a tiny 1x1 pixel black image
-    # We use this so we don't need a real camera to test the pipes!
-    tiny_image_b64 = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII="
+    # NEW: Read the real image from your folder
+    image_path = "test_image.jpg" # Change to .png if your file is a PNG!
     
-    print("\n🚀 Fake Phone: Starting to send video frames...")
+    if not os.path.exists(image_path):
+        print(f"❌ Error: Could not find '{image_path}'. Did you drag a picture into the folder?")
+        return
+
+    # Convert the real picture into a massive Base64 text string
+    with open(image_path, "rb") as image_file:
+        real_image_b64 = base64.b64encode(image_file.read()).decode('utf-8')
     
-    # Send 10 frames to the server
+    print(f"\n🚀 Fake Phone: Starting to send REAL video frames from '{image_path}'...")
+    
+    # Send 10 real frames to the server
     for i in range(10): 
-        sio.emit('video_frame', {'image': tiny_image_b64})
-        print(f"📤 Sent frame {i+1}/10")
-        time.sleep(0.3) # Wait 0.3 seconds between frames so the Frame Dropper doesn't trash them
+        sio.emit('video_frame', {'image': real_image_b64})
+        print(f"📤 Sent real frame {i+1}/10")
+        time.sleep(0.3)
 
 if __name__ == '__main__':
     print("🔄 Fake Phone: Attempting to connect to local server...")
     try:
-        # We connect and pass our fake ID badge (user_id=test_user_99) to get past the bouncer!
         sio.connect('http://localhost:5000?user_id=test_user_99')
         
-        # Start sending the fake video
         simulate_streaming()
         
-        # Hang up the phone
         time.sleep(1)
         sio.disconnect()
         print("👋 Fake Phone: Disconnected. Test complete!")
