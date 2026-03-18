@@ -1,15 +1,8 @@
 from ultralytics import YOLO
 import cv2
-import pyttsx3
-import time
 
-# load trained model (will add later)
-model = YOLO("../models/best.pt")
-
-engine = pyttsx3.init()
-
-last_spoken = ""
-last_time = 0
+# load trained model
+model = YOLO("vision/currency_detection/models/best.pt")
 
 cap = cv2.VideoCapture(0)
 
@@ -22,34 +15,30 @@ while True:
     results = model(frame)
 
     for r in results:
-        boxes = r.boxes
-
-        for box in boxes:
+        for box in r.boxes:
 
             cls = int(box.cls[0])
+            conf = float(box.conf[0])
+
+            # filter weak detections
+            if conf < 0.6:
+                continue
+
             label = model.names[cls]
 
             x1, y1, x2, y2 = map(int, box.xyxy[0])
 
-            cv2.rectangle(frame,(x1,y1),(x2,y2),(0,255,0),2)
-            cv2.putText(frame,label,(x1,y1-10),
-                        cv2.FONT_HERSHEY_SIMPLEX,0.8,(0,255,0),2)
+            # draw box
+            cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
 
-            current_time = time.time()
+            # show label + confidence
+            text = f"{label} {conf:.2f}"
+            cv2.putText(frame, text, (x1, y1 - 10),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
 
-            if label != last_spoken or current_time-last_time > 3:
+    cv2.imshow("Currency Detection - Test Mode", frame)
 
-                text = f"{label} detected"
-                print(text)
-
-                engine.say(text)
-                engine.runAndWait()
-
-                last_spoken = label
-                last_time = current_time
-
-    cv2.imshow("Currency Detection", frame)
-
+    # press ESC to exit
     if cv2.waitKey(1) & 0xFF == 27:
         break
 
