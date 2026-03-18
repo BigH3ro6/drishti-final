@@ -52,7 +52,7 @@ class BlindProfileScreen extends StatelessWidget {
                         onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const BlindPersonalInfoScreen())),
                       ),
                       _buildDivider(),
-                      _buildSettingsTile(Icons.link, "Linked Caregivers", badgeCount: "2",
+                      _buildSettingsTile(Icons.link, "Linked Caregivers",
                         onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const BlindLinkedCaregiversScreen())),
                       ),
                       _buildDivider(),

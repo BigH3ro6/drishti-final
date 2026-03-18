@@ -9,6 +9,7 @@ import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:volume_controller/volume_controller.dart';
 import 'package:battery_plus/battery_plus.dart';
 import 'package:intl/intl.dart';
+import 'package:user_mobile/core/services/pairing_api_service.dart';
 
 class BlindDashboardScreen extends StatefulWidget {
   const BlindDashboardScreen({super.key});
@@ -140,6 +141,31 @@ class _BlindDashboardScreenState extends State<BlindDashboardScreen> {
           debugPrint("System status error: $e");
           await _voiceService.speak("I couldn't read the full system status right now.");
         }
+        break;
+      case "pair_caregiver":
+        _showDummyAction("🔗 Generating pairing code...");
+        
+        await _voiceService.speak("Getting your secure pairing code. Please wait.");
+        
+        String? code = await PairingApiService().generatePairingCode();
+        
+        if (code != null) {
+          // 1. THE VISUAL FIX: Display the code on the screen for sighted helpers!
+          _showDummyAction("Pairing Code:\n$code");
+          
+          // 2. THE AUDIO FIX: Commas force the TTS engine to pause between characters.
+          String spokenCode = code.split('').join(', ');
+          
+          String message = "Your pairing code is, $spokenCode. "
+              "I will repeat that. $spokenCode. "
+              "Please ask your caregiver to enter this code in their app.";
+              
+          await _voiceService.speak(message);
+        } else {
+          _showDummyAction("❌ Connection Error");
+          await _voiceService.speak("Sorry, I couldn't generate a code right now. Please check your internet connection.");
+        }
+        break;
       default:
         break;
     }

@@ -89,7 +89,6 @@ class _CaregiverProfileScreenState extends State<CaregiverProfileScreen> {
                       _buildSettingsTile(
                         Icons.group_outlined, 
                         "Linked Users", 
-                        badgeCount: "3",
                         onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const LinkedUsersScreen())),
                       ),
                       _buildDivider(),

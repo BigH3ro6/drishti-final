@@ -56,3 +56,68 @@ def link_caregiver():
     code_ref.update({"status": "used"})
     
     return jsonify({"message": "Successfully linked to user!"}), 200
+
+@pairing_bp.route('/linked-users', methods=['GET'])
+@require_auth
+def get_linked_users():
+    uid = request.user_uid
+    
+    # 1. Find out who is asking (Caregiver or Blind User)
+    user_doc = db.collection('users').document(uid).get()
+    if not user_doc.exists:
+        return jsonify({"error": "User profile not found"}), 404
+
+    role = user_doc.to_dict().get('role')
+    linked_users = []
+
+    # 2. Look in the correct sub-folder based on their role
+    if role == 'CAREGIVER':
+        sub_col = 'linked_blind_users'
+    else:
+        sub_col = 'linked_caregivers'
+
+    # 3. Get all the linked IDs
+    links = db.collection('users').document(uid).collection(sub_col).get()
+
+    # 4. Fetch the actual profile data (Name, Role, etc.) for each ID
+    for link in links:
+        linked_uid = link.id
+        linked_profile = db.collection('users').document(linked_uid).get()
+        if linked_profile.exists:
+            profile_data = linked_profile.to_dict()
+            profile_data['uid'] = linked_uid 
+            linked_users.append(profile_data)
+
+    return jsonify({"linked_users": linked_users}), 200
+
+@pairing_bp.route('/unlink-user', methods=['POST'])
+@require_auth
+def unlink_user():
+    uid = request.user_uid
+    target_uid = request.json.get('target_uid')
+    
+    if not target_uid:
+        return jsonify({"error": "Missing target_uid parameter"}), 400
+
+    # 1. Find out who is asking so we know which folders to look in
+    user_doc = db.collection('users').document(uid).get()
+    if not user_doc.exists:
+        return jsonify({"error": "User profile not found"}), 404
+
+    role = user_doc.to_dict().get('role')
+
+    # 2. Assign the correct folder names based on the role
+    if role == 'CAREGIVER':
+        my_sub_col = 'linked_blind_users'
+        their_sub_col = 'linked_caregivers'
+    else:
+        my_sub_col = 'linked_caregivers'
+        their_sub_col = 'linked_blind_users'
+
+    # 3. Delete the link from my profile
+    db.collection('users').document(uid).collection(my_sub_col).document(target_uid).delete()
+    
+    # 4. Delete the link from their profile
+    db.collection('users').document(target_uid).collection(their_sub_col).document(uid).delete()
+
+    return jsonify({"message": "Successfully unlinked users!"}), 200

@@ -8,6 +8,8 @@ import 'package:user_mobile/features/auth/screens/success_screen.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 
 class SignupScreen extends StatefulWidget {
   final String userRole; // "BLIND" or "CAREGIVER"
@@ -24,7 +26,38 @@ class _SignupScreenState extends State<SignupScreen> {
   final TextEditingController _passwordController = TextEditingController();
 
   bool _isLoading = false;
+  Future<void> _syncProfileWithBackend(String name) async {
+    try {
+      // 1. Get the current logged-in Firebase user
+      final user = FirebaseAuth.instance.currentUser;
+      if (user == null) return;
 
+      // 2. Get their secure ID Token (The "Security Badge" for your Python middleware)
+      final token = await user.getIdToken();
+      final url = Uri.parse('http://192.168.1.11:5000/sync-profile');
+
+      // 3. Send the request to Python
+      final response = await http.post(
+        url,
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer $token"
+        },
+        body: jsonEncode({
+          "name": name,
+          "role": widget.userRole, // "BLIND" or "CAREGIVER" from the widget!
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        debugPrint("✅ Profile synced to Firestore via Python!");
+      } else {
+        debugPrint("❌ Backend sync failed: ${response.body}");
+      }
+    } catch (e) {
+      debugPrint("❌ Network error syncing profile: $e");
+    }
+  }
   @override
   void dispose() {
     _nameController.dispose();
@@ -77,6 +110,7 @@ class _SignupScreenState extends State<SignupScreen> {
 
       // 5. Update the user's Firebase profile with their Name
       await userCredential.user?.updateDisplayName(name);
+      await _syncProfileWithBackend(name);
 
       // --- 6.Send the Verification Email! ---
       await userCredential.user?.sendEmailVerification();
@@ -143,6 +177,9 @@ class _SignupScreenState extends State<SignupScreen> {
 
       // 4. Sign in to Firebase
       await FirebaseAuth.instance.signInWithCredential(credential);
+
+      final user = FirebaseAuth.instance.currentUser;
+      await _syncProfileWithBackend(user?.displayName ?? 'Google User');
 
       // 5. Save the user's role locally for Auto-Login
       final prefs = await SharedPreferences.getInstance();

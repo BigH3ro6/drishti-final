@@ -203,6 +203,11 @@ Future<void> _startWakeWordListening() async {
     } else if (text.contains("status")) {
       speak("Checking system status.");
       onCommandRecognized("system_status");
+
+    } else if (text.contains("pair") || text.contains("caregiver") || text.contains("link")) {
+      speak("Pairing mode activated.");
+      onCommandRecognized("pair_caregiver");
+      
     } else {
       speak("I didn't catch that. Please try again.");
     }
