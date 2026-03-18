@@ -8,16 +8,6 @@ model_path = os.path.join(BASE_DIR, "models", "best.pt")
 # Load model once
 model = YOLO(model_path)
 
-# Class names
-CLASS_NAMES = {
-    0: "20 rupees",
-    1: "50 rupees",
-    2: "100 rupees",
-    3: "500 rupees",
-    4: "1000 rupees",
-    5: "5000 rupees"
-}
-
 
 def detect_currency(image):
     """
@@ -26,21 +16,23 @@ def detect_currency(image):
     Returns None if nothing detected with sufficient confidence.
     """
 
-    results = model(image)
+    results = model(image, verbose=False)
 
     best_label = None
     best_conf = 0
 
     for r in results:
-        for box in r.boxes:
+        boxes = r.boxes
 
-            cls = int(box.cls[0])
-            conf = float(box.conf[0])
+        for box in boxes:
 
-            if conf < 0.5:
+            cls = int(box.cls)
+            conf = float(box.conf)
+
+            if conf < 0.6:
                 continue
 
-            label = CLASS_NAMES.get(cls, model.names[cls])
+            label = model.names[cls]
 
             if conf > best_conf:
                 best_conf = conf
@@ -50,6 +42,6 @@ def detect_currency(image):
         return None
 
     return {
-        "currency": best_label,
+        "currency": best_label.replace("_", " "),
         "confidence": round(best_conf, 2)
     }
