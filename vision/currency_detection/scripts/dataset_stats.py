@@ -1,7 +1,7 @@
 import os
 from collections import Counter
 
-dataset_path = "../data/raw/sl-currency-dataset-yolov"
+dataset_path = "data/raw/sl-currency-dataset-yolov"
 splits = ["train", "valid", "test"]
 
 class_counts = Counter()
