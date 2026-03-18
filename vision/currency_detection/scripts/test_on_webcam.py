@@ -1,33 +1,14 @@
-import sys
 import os
 import cv2
-import time
-import threading
-from gtts import gTTS
+from ultralytics import YOLO
 
 # Safe path setup
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.append(BASE_DIR)
+model_path = os.path.join(BASE_DIR, "models", "best.pt")
 
-from src.currency_detector import detect_currency
+model = YOLO(model_path)
 
-# ===== GOOGLE TTS (TEST ONLY) =====
-last_spoken = ""
-last_time = 0
-
-
-def speak(text):
-    def run():
-        filename = os.path.join(BASE_DIR, "output.mp3")
-        tts = gTTS(text=text, lang='en')
-        tts.save(filename)
-        os.system(f"start {filename}")
-    threading.Thread(target=run, daemon=True).start()
-
-
-# ===== WEBCAM =====
 cap = cv2.VideoCapture(0)
-
 print("Starting webcam... Press ESC or Q to quit.")
 
 while True:
@@ -36,27 +17,39 @@ while True:
     if not ret:
         break
 
-    result = detect_currency(frame)
+    results = model(frame, verbose=False)
 
-    if result:
-        label = result["currency"]
-        conf = result["confidence"]
+    for r in results:
+        boxes = r.boxes
 
-        current_time = time.time()
+        for box in boxes:
 
-        # Draw label on frame
-        cv2.putText(frame, f"{label} ({conf})",
-                    (20, 50), cv2.FONT_HERSHEY_SIMPLEX,
-                    1, (0, 255, 0), 2)
+            cls = int(box.cls)
+            conf = float(box.conf)
+            label = model.names[cls]
 
-        # Speak only when new or after 3 seconds
-        if label != last_spoken or current_time - last_time > 3:
-            print(f"Detected: {label} ({conf})")
-            speak(label)
-            last_spoken = label
-            last_time = current_time
+            if conf < 0.6:
+                continue
 
-    cv2.imshow("Webcam Test - Currency Detection", frame)
+            x1, y1, x2, y2 = map(int, box.xyxy[0])
+
+            # Draw bounding box
+            cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
+
+            # Draw label background
+            label_text = f"{label.replace('_', ' ')} {conf:.2f}"
+            (w, h), _ = cv2.getTextSize(label_text,
+                                         cv2.FONT_HERSHEY_SIMPLEX, 0.7, 2)
+            cv2.rectangle(frame, (x1, y1 - 25),
+                          (x1 + w, y1), (0, 255, 0), -1)
+
+            # Draw label text
+            cv2.putText(frame, label_text, (x1, y1 - 5),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 0), 2)
+
+            print(f"Detected: {label} ({conf:.2f})")
+
+    cv2.imshow("Currency Detection", frame)
 
     key = cv2.waitKey(1) & 0xFF
     if key == 27 or key == ord('q'):
