@@ -104,6 +104,19 @@ Future<void> _startWakeWordListening() async {
     await _flutterTts.speak(text);
   }
 
+  Future<void> triggerManualListen() async {
+    debugPrint("Manual screen tap detected. Handing over microphone...");
+    
+    // Force Porcupine to let go of the microphone
+    if (_isWakeWordListening) {
+      _isWakeWordListening = false; 
+      await _porcupineManager?.stop();  
+      // Give the phone's hardware a tiny fraction of a second to release the mic lock
+      await Future.delayed(const Duration(milliseconds: 500)); 
+    }
+    await startListening(); 
+  }
+
   // 3. Start listening to the user's microphone
   Future<void> startListening() async {
     if (!_isListening) {

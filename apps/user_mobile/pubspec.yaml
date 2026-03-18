@@ -46,6 +46,7 @@ dependencies:
   flutter_tts: ^4.2.5
   porcupine_flutter: ^4.0.0
   flutter_dotenv: ^6.0.0
+  geolocator: ^14.0.2
 
 dev_dependencies:
   flutter_test:
