@@ -38,9 +38,11 @@ while True:
 
     cv2.imshow("Currency Detection - Test Mode", frame)
 
-    # press ESC to exit
-    if cv2.waitKey(1) & 0xFF == 27:
-        break
+    # press q to exit
+    key = cv2.waitKey(1) & 0xFF
+
+    if key == 27 or key == ord('q'):
+       break
 
 cap.release()
 cv2.destroyAllWindows()
