@@ -5,6 +5,10 @@ import 'package:user_mobile/core/services/voice_assistant_service.dart';
 import 'package:user_mobile/features/blind_mode/screens/blind_profile_screen.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:user_mobile/core/services/weather_api_service.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:volume_controller/volume_controller.dart';
+import 'package:battery_plus/battery_plus.dart';
+import 'package:intl/intl.dart';
 
 class BlindDashboardScreen extends StatefulWidget {
   const BlindDashboardScreen({super.key});
@@ -86,9 +90,56 @@ class _BlindDashboardScreenState extends State<BlindDashboardScreen> {
       case "current_location":
         _showDummyAction("📍 Finding Current Location...");
         break;
-      case "system_status":
-        _showDummyAction("🔋 Checking Time & Battery...");
+      case "time":
+        _showDummyAction("🕒 Checking Time...");
+        final now = DateTime.now();
+        final timeString = DateFormat('h:mm a').format(now);
+        await _voiceService.speak("It is $timeString.");
         break;
+
+      case "battery":
+        _showDummyAction("🔋 Checking Battery...");
+        final battery = Battery();
+        final batteryLevel = await battery.batteryLevel;
+        await _voiceService.speak("Your battery is at $batteryLevel percent.");
+        break;
+
+      case "system_status":
+        _showDummyAction("📊 Checking System Status...");
+        try {
+          // 1. Time & Date
+          final now = DateTime.now();
+          final timeString = DateFormat('h:mm a').format(now);
+          final dateString = DateFormat('EEEE, MMMM d').format(now);
+
+          // 2. Battery
+          final battery = Battery();
+          final batteryLevel = await battery.batteryLevel;
+
+          // 3. Network Connectivity
+          final connectivityResult = await Connectivity().checkConnectivity();
+          String networkStatus = "no internet connection";
+          
+          if (connectivityResult.contains(ConnectivityResult.wifi)) {
+            networkStatus = "connected to Wi-Fi";
+          } else if (connectivityResult.contains(ConnectivityResult.mobile)) {
+            networkStatus = "connected to a mobile network";
+          }
+
+          // 4. Volume Level (Returns 0.0 to 1.0, so we multiply by 100)
+          double volumeVal = await VolumeController.instance.getVolume();           int volumePercent = (volumeVal * 100).round();
+
+          // 5. Construct status report!
+          String fullStatus = "It is $timeString on $dateString. "
+              "Your battery is at $batteryLevel percent. "
+              "You are $networkStatus, and your device volume is at $volumePercent percent.";
+
+          await _voiceService.speak(fullStatus);
+          
+        } catch (e) {
+          debugPrint("System status error: $e");
+          await _voiceService.speak("I couldn't read the full system status right now.");
+        }
       default:
         break;
     }
