@@ -138,9 +138,9 @@ class _BlindDashboardScreenState extends State<BlindDashboardScreen> {
       ),
       // Full-screen tap target for accessibility
       body: GestureDetector(
-        onTap: () {
+        onTap: () async {
           setState(() => _isListeningUI = true);
-          _voiceService.startListening();
+          await _voiceService.triggerManualListen();
         },
         behavior: HitTestBehavior.opaque,
         child: Container(

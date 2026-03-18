@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'dart:convert';
 
 class WeatherApiService {
-  static const String backendUrl = 'http://192.168.1.7:5000';
+  static const String backendUrl = 'http://192.168.1.11:5000';
 
   Future<String> fetchCurrentWeather() async {
     try {
