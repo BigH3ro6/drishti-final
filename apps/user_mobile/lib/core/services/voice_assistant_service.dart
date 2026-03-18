@@ -192,11 +192,18 @@ Future<void> _startWakeWordListening() async {
       speak("Fetching your current location.");
       onCommandRecognized("current_location");
       
-    } else if (text.contains("time") || text.contains("battery") || text.contains("status")) {
+    } else if (text.contains("time")) {
+      speak("Checking time.");
+      onCommandRecognized("time");
+      
+    } else if (text.contains("battery")) {
+      speak("Checking battery.");
+      onCommandRecognized("battery");
+      
+    } else if (text.contains("status")) {
       speak("Checking system status.");
       onCommandRecognized("system_status");
-    }
-      else {
+    } else {
       speak("I didn't catch that. Please try again.");
     }
   }
