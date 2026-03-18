@@ -6,7 +6,7 @@ import os
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 
 model_path = os.path.join(BASE_DIR, "models", "best.pt")
-image_path = os.path.join(BASE_DIR, "test_images", "sample18.jpeg")
+image_path = os.path.join(BASE_DIR, "test_images", "sample29.jpeg")
 
 # ===== LOAD MODEL =====
 model = YOLO(model_path)
