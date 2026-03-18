@@ -21,6 +21,7 @@ firmware/esp32-cam/.vscode/
 
 # Machine Learning
 ml/datasets/
+
 # Visual Studio / VS Code Junk
 .vs/
 .vscode/
@@ -28,6 +29,7 @@ ml/datasets/
 *.sqlite
 CMakeWorkspaceSettings.json
 VSWorkspaceState.json
+
 # Currency detection dataset
 vision/currency_detection/data/
 
@@ -37,3 +39,10 @@ vision/currency_detection/models/*.pt
 
 # Virtual environment
 .venv/
+
+# Audio files
+*.mp3
+
+# Python cache
+__pycache__/
+*.pyc
