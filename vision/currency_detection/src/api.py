@@ -1,88 +1,113 @@
 import os
-import sys
 import cv2
 import numpy as np
-from flask import Flask, request, jsonify
+from fastapi import FastAPI, File, UploadFile
+from fastapi.responses import JSONResponse
+from ultralytics import YOLO
 
-# Safe path setup
+app = FastAPI(
+    title="Drishti Currency Detection API",
+    description="Sri Lankan currency note detection API for the Drishti assistive app for visually impaired users",
+    version="1.0.0"
+)
+
+# Load model
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.append(BASE_DIR)
-
-from src.currency_detector import detect_currency
-
-app = Flask(__name__)
+model_path = os.path.join(BASE_DIR, "models", "best.pt")
+model = YOLO(model_path)
 
 
-@app.route("/predict", methods=["POST"])
-def predict():
-    """
-    Accepts a POST request with an image file.
-    Returns detected currency note as JSON.
+def detect_currency(image):
+    results = model(image, verbose=False)
 
-    Example response:
-    {
-        "success": true,
-        "currency": "This is a 500 rupees note",
-        "confidence": 0.98
+    best_label = None
+    best_conf = 0
+
+    for r in results:
+        for box in r.boxes:
+            cls = int(box.cls[0])
+            conf = float(box.conf[0])
+
+            if conf < 0.6:
+                continue
+
+            label = model.names[cls].replace("_", " ")
+
+            if conf > best_conf:
+                best_conf = conf
+                best_label = label
+
+    if best_label is None:
+        return None
+
+    return {
+        "currency": best_label,
+        "confidence": round(best_conf, 2)
     }
+
+
+@app.get("/")
+def read_root():
+    return {"message": "Drishti Currency Detection API is running"}
+
+
+@app.get("/health")
+def health():
+    return {
+        "status": "running",
+        "model": "YOLOv8 Sri Lankan Currency Detector"
+    }
+
+
+@app.post("/predict")
+async def predict(image: UploadFile = File(...)):
+    """
+    Detect Sri Lankan currency note from an uploaded image.
+
+    - **image**: Image file (JPEG/PNG)
+
+    Returns detected currency note as text.
     """
 
-    # Check if image was sent
-    if "image" not in request.files:
-        return jsonify({
-            "success": False,
-            "error": "No image provided. Send image as form-data with key 'image'"
-        }), 400
+    if not image.filename:
+        return JSONResponse(
+            status_code=400,
+            content={"success": False, "error": "No image provided"}
+        )
 
-    file = request.files["image"]
-
-    # Check if file is empty
-    if file.filename == "":
-        return jsonify({
-            "success": False,
-            "error": "Empty file received"
-        }), 400
-
-    # Convert image to OpenCV format
-    img_bytes = file.read()
+    img_bytes = await image.read()
     img_array = np.frombuffer(img_bytes, np.uint8)
     img = cv2.imdecode(img_array, cv2.IMREAD_COLOR)
 
     if img is None:
-        return jsonify({
-            "success": False,
-            "error": "Invalid image format"
-        }), 400
+        return JSONResponse(
+            status_code=400,
+            content={"success": False, "error": "Invalid image format"}
+        )
 
-    # Run detection
     result = detect_currency(img)
 
     if result is None:
-        return jsonify({
-            "success": False,
-            "currency": None,
-            "message": "No currency note detected. Please take a clearer photo."
-        }), 200
+        return JSONResponse(
+            status_code=200,
+            content={
+                "success": False,
+                "currency": None,
+                "message": "No currency note detected. Please take a clearer photo."
+            }
+        )
 
-    # Format output message for backend developer
-    currency_name = result["currency"]
-    confidence = result["confidence"]
-
-    return jsonify({
-        "success": True,
-        "currency": f"This is a {currency_name} note",
-        "confidence": confidence
-    }), 200
-
-
-@app.route("/health", methods=["GET"])
-def health():
-    """Health check endpoint"""
-    return jsonify({
-        "status": "running",
-        "model": "YOLOv8 Sri Lankan Currency Detector"
-    }), 200
+    return JSONResponse(
+        status_code=200,
+        content={
+            "success": True,
+            "currency": f"This is a {result['currency']} note",
+            "confidence": result["confidence"]
+        }
+    )
 
 
 if __name__ == "__main__":
-    app.run(debug=True, host="0.0.0.0", port=5000)
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000)
+    
