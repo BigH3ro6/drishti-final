@@ -1,6 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:user_mobile/core/app_colors.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:user_mobile/core/services/pairing_api_service.dart';
+import 'package:geocoding/geocoding.dart';
+import 'dart:ui' as ui;
+import 'dart:io';
+import 'dart:typed_data';
+import 'package:http/http.dart' as http;
+import 'package:user_mobile/features/caregiver_mode/add_place_screen.dart';
 
 class MapTrackingScreen extends StatefulWidget {
   const MapTrackingScreen({super.key});
@@ -11,36 +19,205 @@ class MapTrackingScreen extends StatefulWidget {
 }
 
 class _MapTrackingScreenState extends State<MapTrackingScreen> with SingleTickerProviderStateMixin {
-  // Dummy data
-  final List<Map<String, dynamic>> _users = [
-    {"name": "Kamal", "location": "Near De Mel mawatha\nSince 1.30 p.m", "battery": 100, "steps": "1,250 Steps", "dist": "5.2 km"},
-    {"name": "Geetha", "location": "Passing Nelum Pokuna\nUpdate now", "battery": 85, "steps": "0 Steps", "dist": "3 km"},
-    {"name": "Rohan", "location": "Near Majestic City\nSince 2.55 p.m", "battery": 55, "steps": "3250 Steps", "dist": "8 km"},
-  ];
 
-  final List<String> _places = [
-    "Perera's home",
-    "Boswel Place",
-    "Colombo Fort Station",
-    "City Hospital",
-    "Keells",
-  ];
+ final PairingApiService _apiService = PairingApiService();
+ List<Map<String, dynamic>> _savedPlaces = [];
+  
+  List<Map<String, dynamic>> _liveUsers = [];
+  Set<Marker> _userMarkers = {};
+  Set<Marker> _placeMarkers = {};
+  Set<Circle> _placeCircles = {};
+  bool _isLoading = true;
+  GoogleMapController? _mapController;
+
+  final CameraPosition _initialLocation = const CameraPosition(
+    target: LatLng(6.9271, 79.8612), 
+    zoom: 14.5,
+  );
 
   final double _sheetInitialSize = 0.25; 
   
-  // 2. Added a dedicated TabController
-  late TabController _tabController;
+  // Added a dedicated TabController
+  late TabController _tabController;  
 
-  @override
+@override
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
-    // Listen to tab taps and refresh the UI to show the correct list
     _tabController.addListener(() {
-      setState(() {}); 
+      setState(() {});
     });
+
+    // Add the API calls to fetch the data when the screen loads
+    _fetchLiveLocations();
+    _fetchSavedPlaces(); 
   }
 
+ Future<void> _fetchLiveLocations() async {
+    final linkedUsers = await _apiService.getLinkedUsers();
+    
+    List<Map<String, dynamic>> updatedUsersList = [];
+    Set<Marker> newMarkers = {};
+
+    for (var user in linkedUsers) {
+      final locationData = await _apiService.getUserLocation(user['uid']);
+      
+      if (locationData != null) {
+        double lat = locationData['latitude'];
+        double lng = locationData['longitude'];
+        
+        // --- 1. PARSE THE TIMESTAMP ---
+        String formattedTime = "Recently";
+        if (locationData['updated_at'] != null) {
+          try {
+            // Convert the Python UTC time to the user's local phone time
+            DateTime time = HttpDate.parse(locationData['updated_at'].toString()).toLocal();            // Format it to look like "2:45 PM"
+            String minute = time.minute.toString().padLeft(2, '0');
+            String ampm = time.hour >= 12 ? 'PM' : 'AM';
+            int hour = time.hour > 12 ? time.hour - 12 : (time.hour == 0 ? 12 : time.hour);
+            formattedTime = "$hour:$minute $ampm";
+          } catch (e) {
+            debugPrint("❌ Time parse error: $e");
+          }
+        }
+
+        // --- 2. REVERSE GEOCODING ---
+        String humanReadableAddress = "Live Location";
+        try {
+          List<Placemark> placemarks = await placemarkFromCoordinates(lat, lng);
+          if (placemarks.isNotEmpty) {
+            Placemark place = placemarks[0];
+            humanReadableAddress = "Near ${place.street}, ${place.locality}";
+          }
+        } catch (e) {}
+        
+        // --- 3. GENERATE THE CUSTOM PROFILE MARKER ---
+        BitmapDescriptor profileMarker = await _createProfileMarker(user['profile_image_url']);
+
+        updatedUsersList.add({
+          "name": user['name'] ?? "Unknown",
+          "location": "$humanReadableAddress\nLast seen at $formattedTime", 
+          "battery": 100, 
+          "steps": "Active",
+          "dist": "Live",
+          "lat": lat,
+          "lng": lng,
+        });
+
+        newMarkers.add(
+          Marker(
+            markerId: MarkerId(user['uid']),
+            position: LatLng(lat, lng),
+            zIndexInt: 2,
+            infoWindow: InfoWindow(
+              title: user['name'] ?? "User",
+              snippet: "Updated at $formattedTime", 
+            ),
+            icon: profileMarker, 
+          ),
+        );
+      }
+    }
+
+    if (mounted) {
+      setState(() {
+        _liveUsers = updatedUsersList;
+        _userMarkers = newMarkers;
+        _isLoading = false;
+      });
+
+      if (newMarkers.isNotEmpty && _mapController != null) {
+        _mapController!.animateCamera(
+          CameraUpdate.newLatLngZoom(newMarkers.first.position, 15.0),
+        );
+      }
+    }
+  }
+  
+  Future<void> _fetchSavedPlaces() async {
+    final places = await _apiService.getSavedPlaces();
+    
+    Set<Marker> newPlaceMarkers = {};
+    Set<Circle> newPlaceCircles = {};
+
+    for (var place in places) {
+      if (place['latitude'] != null && place['longitude'] != null) {
+        LatLng position = LatLng(place['latitude'], place['longitude']);
+        String placeId = place['id'] ?? place['name']; // Use Firestore ID if available
+
+        // 1. Draw the small pin in the center
+        newPlaceMarkers.add(
+          Marker(
+            markerId: MarkerId('marker_$placeId'),
+            position: position,
+            zIndexInt: 1,
+            icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueViolet),
+            infoWindow: InfoWindow(
+              title: place['name'] ?? "Saved Place",
+              snippet: "Safe Zone (100m)",
+            ),
+          ),
+        );
+
+        // 2. Draw the translucent Geofence Circle around it
+        newPlaceCircles.add(
+          Circle(
+            circleId: CircleId('circle_$placeId'),
+            center: position,
+            radius: 100, // The 100-meter safe zone radius!
+            fillColor: AppColors.purpleLight.withOpacity(0.2), 
+            strokeColor: AppColors.purpleDark, 
+            strokeWidth: 2,
+          ),
+        );
+      }
+    }
+
+    if (mounted) {
+      setState(() {
+        _savedPlaces = places;
+        _placeMarkers = newPlaceMarkers;
+        _placeCircles = newPlaceCircles;
+      });
+    }
+  }
+  Future<BitmapDescriptor> _createProfileMarker(String? imageUrl) async {
+    const int size = 150; // Size of the map pin
+    final ui.PictureRecorder pictureRecorder = ui.PictureRecorder();
+    final Canvas canvas = Canvas(pictureRecorder);
+
+    // 1. Draw the circular background/border (Using your AppColors.purpleDark)
+    final Paint borderPaint = Paint()
+      ..color = const Color(0xFF2D1B6B) 
+      ..isAntiAlias = true;
+    canvas.drawCircle(const Offset(size / 2, size / 2), size / 2.0, borderPaint);
+
+    // 2. Try to fetch and draw the user's profile picture
+    if (imageUrl != null && imageUrl.isNotEmpty) {
+      try {
+        final http.Response response = await http.get(Uri.parse(imageUrl));
+        final Uint8List bytes = response.bodyBytes;
+        final ui.Codec codec = await ui.instantiateImageCodec(bytes, targetWidth: size - 16, targetHeight: size - 16);
+        final ui.FrameInfo frameInfo = await codec.getNextFrame();
+        final ui.Image image = frameInfo.image;
+
+        // Clip the image to a circle so it fits inside the border
+        final Path clipPath = Path()..addOval(Rect.fromLTWH(8, 8, size - 16.0, size - 16.0));
+        canvas.clipPath(clipPath);
+        
+        // Draw the image onto the canvas
+        canvas.drawImage(image, const Offset(8, 8), Paint());
+      } catch (e) {
+        debugPrint("❌ Failed to load profile image for marker: $e");
+        // It will show the solid purple circle if the image fails!
+      }
+    }
+
+    // 3. Convert the canvas drawing into a Google Maps Marker
+    final ui.Image markerAsImage = await pictureRecorder.endRecording().toImage(size, size);
+    final ByteData? byteData = await markerAsImage.toByteData(format: ui.ImageByteFormat.png);
+    return BitmapDescriptor.fromBytes(byteData!.buffer.asUint8List());
+  }
   @override
   void dispose() {
     _tabController.dispose();
@@ -55,11 +232,19 @@ class _MapTrackingScreenState extends State<MapTrackingScreen> with SingleTicker
       body: Stack(
         children: [
           // BACKGROUND MAP
-          Container(
-            color: const Color(0xFFE8EAF6),
+          SizedBox(
             width: double.infinity,
             height: double.infinity,
-            child: CustomPaint(painter: GridPainter()),
+            child: GoogleMap(
+              initialCameraPosition: _initialLocation,
+              zoomControlsEnabled: false, 
+              myLocationButtonEnabled: false,
+              onMapCreated: (GoogleMapController controller) {
+                _mapController = controller;
+              },
+              markers: _userMarkers.union(_placeMarkers),
+              circles: _placeCircles,
+            ),
           ),
 
           // TOP APP BAR
@@ -124,7 +309,6 @@ class _MapTrackingScreenState extends State<MapTrackingScreen> with SingleTicker
     );
   }
 
-  // 3. THE NEW CUSTOM SCROLL VIEW FIX
 Widget _buildDraggableBottomSheet() {
     return DraggableScrollableSheet(
       initialChildSize: _sheetInitialSize,
@@ -140,7 +324,6 @@ Widget _buildDraggableBottomSheet() {
           child: CustomScrollView(
             controller: scrollController, 
             slivers: [
-              // --- HERE IS THE SLIVER APP BAR ---
               SliverAppBar(
                 pinned: true,
                 backgroundColor: Colors.white,
@@ -148,7 +331,6 @@ Widget _buildDraggableBottomSheet() {
                 automaticallyImplyLeading: false,
                 toolbarHeight: 0, 
                 bottom: PreferredSize(
-                  // INCREASED HEIGHT TO 90 to fix the overflow error!
                   preferredSize: const Size.fromHeight(90), 
                   child: Column(
                     children: [
@@ -172,7 +354,7 @@ Widget _buildDraggableBottomSheet() {
                         child: TabBar(
                           controller: _tabController,
                           dividerColor: Colors.transparent, 
-                          dividerHeight: 0, // THIS KILLS THE UGLY LINE!
+                          dividerHeight: 0, 
                           indicatorSize: TabBarIndicatorSize.tab,
                           indicator: BoxDecoration(
                             color: AppColors.purpleLight.withOpacity(0.3), 
@@ -207,7 +389,7 @@ Widget _buildDraggableBottomSheet() {
       sliver: SliverList(
         delegate: SliverChildBuilderDelegate(
           (context, index) {
-            final user = _users[index];
+            final user = _liveUsers[index];
             return Column(
               children: [
                 Row(
@@ -235,56 +417,80 @@ Widget _buildDraggableBottomSheet() {
                     ),
                   ],
                 ),
-                if (index < _users.length - 1) Divider(color: Colors.grey[200], height: 30),
+                if (index < _liveUsers.length - 1) Divider(color: Colors.grey[200], height: 30),
               ],
             );
           },
-          childCount: _users.length,
+          childCount: _liveUsers.length,
         ),
       ),
     );
   }
 
-  Widget _buildPlacesSliverList() {
+Widget _buildPlacesSliverList() {
     return SliverPadding(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
       sliver: SliverList(
-        delegate: SliverChildBuilderDelegate(
-          (context, index) {
-            if (index == 0) {
-              return Column(
-                children: [
-                  ListTile(leading: const CircleAvatar(backgroundColor: AppColors.purpleLight, child: Icon(Icons.add, color: Colors.white)), title: Text("Add a new Place", style: GoogleFonts.poppins(fontWeight: FontWeight.w600)), onTap: () {}),
-                  Divider(color: Colors.grey[200], height: 20),
-                ],
-              );
-            }
-            final placeIndex = index - 1;
+        delegate: SliverChildListDelegate([
+          
+          // 1. THE DYNAMIC PLACES LIST
+          ..._savedPlaces.map((place) {
             return Column(
               children: [
                 ListTile(
-                  leading: const Icon(Icons.location_on, color: AppColors.purpleLight),
-                  title: Text(_places[placeIndex], style: GoogleFonts.poppins()),
-                  trailing: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      IconButton(icon: const Icon(Icons.close, color: Colors.grey, size: 20), onPressed: () {}),
-                      const Icon(Icons.notifications_active, color: AppColors.purpleLight, size: 20),
-                    ],
+                  leading: const CircleAvatar(
+                    backgroundColor: AppColors.purpleLight, 
+                    child: Icon(Icons.location_on, color: Colors.white, size: 20)
                   ),
+                  title: Text(place['name'] ?? "Saved Place", style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
+                  subtitle: Text("Geofence Active", style: GoogleFonts.poppins(fontSize: 12, color: Colors.grey)),
+                  trailing: IconButton(
+                    icon: Icon(
+                      place['alerts_enabled'] == true ? Icons.notifications_active : Icons.notifications_off, 
+                      color: place['alerts_enabled'] == true ? AppColors.purpleDark : Colors.grey,
+                      size: 20
+                    ),
+                    onPressed: () {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text("Alerts toggled for ${place['name']}")),
+                      );
+                    },
+                  ),
+                  onTap: () {
+                    // Fly the map camera to this saved place when tapped!
+                    if (_mapController != null && place['latitude'] != null && place['longitude'] != null) {
+                      _mapController!.animateCamera(
+                        CameraUpdate.newLatLngZoom(LatLng(place['latitude'], place['longitude']), 16.0)
+                      );
+                    }
+                  },
                 ),
-                if (placeIndex < _places.length - 1) Divider(color: Colors.grey[200], height: 20),
+                Divider(color: Colors.grey[200], height: 20),
               ],
             );
-          },
-          childCount: _places.length + 1,
-        ),
+          }).toList(), 
+
+          // 2. THE "ADD NEW PLACE" BUTTON
+          ListTile(
+            leading: const CircleAvatar(backgroundColor: Colors.grey, child: Icon(Icons.add, color: Colors.white)),
+            title: Text("Add a new Place", style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
+            onTap: () async {
+              final didAddPlace = await Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const AddPlaceScreen()),
+              );
+              
+              if (didAddPlace == true) {
+                _fetchSavedPlaces(); // Refresh the list automatically!
+              }
+            },
+          ),
+          const SizedBox(height: 30), 
+        ]),
       ),
     );
   }
 }
-
-// Ensure this is outside the main class bracket!
 class GridPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
