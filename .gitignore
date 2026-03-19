@@ -61,6 +61,7 @@ output_videos/
 # Ignore raw test data
 drishti-final/test_images/
 drishti-final/detection_results/
+drishti-final/output_lives/
 
 # Ignore local python environment and cache
 __pycache__/

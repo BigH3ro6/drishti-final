@@ -1,76 +1,86 @@
 import cv2
+import os
+import time
 import matplotlib.pyplot as plt
 from ultralytics import YOLO
-import time
-import os
 
-# 1. SETUP - Use Absolute Path for your model
-# (Matches the path seen in your VS Code sidebar)
+# 1. SETUP
 model_path = r'C:\Users\USER\Downloads\Obstacle_Detection_Project\drishti-final\ml_pipeline_Obstacle_det\runs\detect\Drishti_Final_Push\v11n_augmented_852\weights\best.pt'
 model = YOLO(model_path)
 
-# 2. CAMERA FINDER - Scans Index 1 (Iriun), then 2, then 0 (Internal Cam)
+# NEW: Dedicated folder for Live Mobility Scene recordings
+OUTPUT_DIR = r'C:\Users\USER\Downloads\Obstacle_Detection_Project\drishti-final\output_lives'
+if not os.path.exists(OUTPUT_DIR):
+    os.makedirs(OUTPUT_DIR)
+
+# Unique filename with timestamp (e.g., live_test_20260319_1410.mp4)
+timestamp = time.strftime("%Y%m%d_%H%M%S")
+video_save_path = os.path.join(OUTPUT_DIR, f"live_test_{timestamp}.mp4")
+
+# 2. CAMERA FINDER (Iriun usually sits at Index 1 or 2)
 def get_camera():
     for index in [1, 2, 0]:
         cap = cv2.VideoCapture(index)
         if cap.isOpened():
-            ret, frame = cap.read()
-            if ret:
-                print(f"Camera found at Index {index}")
-                return cap
+            ret, _ = cap.read()
+            if ret: return cap
             cap.release()
     return None
 
 cap = get_camera()
-
 if cap is None:
-    print("ERROR: No camera detected. Ensure Iriun is open on your iPhone and Laptop.")
+    print("ERROR: No camera detected. Open Iriun on your iPhone first.")
     exit()
 
-# 3. GUI SETUP - Uses Matplotlib for "Notebook-safe" display
-plt.ion()  # Turn on interactive mode
-fig, ax = plt.subplots(figsize=(10, 6))
-fig.canvas.manager.set_window_title('Drishti AI Live Vision')
+# 3. VIDEO WRITER CONFIG
+frame_width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+frame_height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+fps = 15  # Adjust based on your Lenovo LOQ's processing speed
+fourcc = cv2.VideoWriter_fourcc(*'mp4v') 
+out = cv2.VideoWriter(video_save_path, fourcc, fps, (frame_width, frame_height))
 
-print("DRISHTI SYSTEM LIVE: Point your iPhone at the road...")
-print("TIP: Close the window or press Ctrl+C in terminal to stop.")
+# 4. GUI SETUP
+plt.ion()
+fig, ax = plt.subplots(figsize=(10, 6))
+fig.canvas.manager.set_window_title('Drishti AI: Live Mobility Scene')
+
+print(f"RECORDING STARTED: Saving to {video_save_path}")
 
 try:
     while cap.isOpened():
         ret, frame = cap.read()
         if not ret: break
 
-        # 4. RUN AI DETECTION (Conf 0.3 for good balance)
+        # Run AI (Using 0.5 confidence for the street test)
         results = model.predict(frame, conf=0.5, verbose=False)
-        
-        # 5. DRAW LABELS & BOXES
         annotated_frame = results[0].plot()
         
-        # 6. UPDATE DISPLAY
+        # SAVE TO FILE
+        out.write(annotated_frame)
+
+        # DISPLAY IN WINDOW
         frame_rgb = cv2.cvtColor(annotated_frame, cv2.COLOR_BGR2RGB)
         ax.clear()
         ax.imshow(frame_rgb)
         ax.axis('off')
         
-        # Check for detections and print to terminal for feedback
+        # Terminal Feedback for important obstacles
         for box in results[0].boxes:
-            class_id = int(box.cls[0])
-            label = model.names[class_id]
-            if label.lower() == "zebra_crossing":
-                print(f"ALERT: {label.upper()} DETECTED!")
+            label = model.names[int(box.cls[0])]
+            if label.lower() in ["zebra_crossing", "pothole"]:
+                print(f"{label.upper()} DETECTED!")
 
         plt.draw()
-        plt.pause(0.001)
+        plt.pause(0.01)
 
-        # 7. SAFE CLOSE - Stop if user clicks the "X" on the window
         if not plt.fignum_exists(fig.number):
             break
 
 except KeyboardInterrupt:
-    print("\nManual Stop Requested.")
+    print("\nStopping...")
 
 finally:
-    # 8. CLEANUP
     cap.release()
+    out.release() # This "finalizes" the video file so it's playable
     plt.close('all')
-    print("Drishti System Shutdown Cleanly.")
+    print(f"Live test saved successfully: {video_save_path}")
