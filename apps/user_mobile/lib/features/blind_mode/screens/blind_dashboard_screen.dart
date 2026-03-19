@@ -6,6 +6,7 @@ import 'package:user_mobile/features/blind_mode/screens/blind_profile_screen.dar
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:user_mobile/core/services/weather_api_service.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:user_mobile/features/blind_mode/screens/obstacle_debug_screen.dart';
 import 'package:volume_controller/volume_controller.dart';
 import 'package:battery_plus/battery_plus.dart';
 import 'package:intl/intl.dart';
@@ -223,6 +224,12 @@ class _BlindDashboardScreenState extends State<BlindDashboardScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          Navigator.push(context, MaterialPageRoute(builder: (context) => const ObstacleDebugScreen()));
+        },
+        child: const Icon(Icons.bug_report),
+      ),
       extendBodyBehindAppBar: true, 
       appBar: AppBar(
         backgroundColor: Colors.transparent,
