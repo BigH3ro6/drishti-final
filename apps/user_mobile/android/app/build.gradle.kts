@@ -1,3 +1,5 @@
+import java.util.Properties
+import java.io.FileInputStream
 plugins {
     id("com.android.application")
     // START: FlutterFire Configuration
@@ -26,11 +28,18 @@ android {
         // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
         applicationId = "com.example.user_mobile"
         // You can update the following values to match your application needs.
-        // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+       val mapProperties = Properties()
+        val propFile = project.rootProject.file("local.properties")
+        if (propFile.exists()) {
+            mapProperties.load(FileInputStream(propFile))
+        }
+        
+        // 2. Inject the key into the Android Manifest
+        manifestPlaceholders += mapOf("MAPS_API_KEY" to (mapProperties.getProperty("google_maps_api_key") ?: ""))
     }
 
     buildTypes {
