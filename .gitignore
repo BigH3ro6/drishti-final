@@ -58,3 +58,9 @@ vedios/
 # Ignore generated detection outputs
 output_videos/
 
+# Ignore raw test data
+drishti-final/test_images/
+
+# Ignore local python environment and cache
+__pycache__/
+.ipynb_checkpoints/
