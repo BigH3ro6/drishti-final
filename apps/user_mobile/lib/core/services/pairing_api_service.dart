@@ -57,7 +57,7 @@ class PairingApiService {
           "Content-Type": "application/json",
           "Authorization": "Bearer $token"
         },
-        body: jsonEncode({"code": code.toUpperCase()}), // Force uppercase just in case!
+        body: jsonEncode({"code": code.toUpperCase()}), 
       );
 
       if (response.statusCode == 200) {
@@ -127,6 +127,125 @@ class PairingApiService {
     } catch (e) {
       debugPrint("❌ Network error unlinking user: $e");
       return false;
+    }
+  }
+  Future<Map<String, dynamic>?> getUserLocation(String targetUid) async {
+    try {
+      final user = FirebaseAuth.instance.currentUser;
+      if (user == null) return null;
+
+      final token = await user.getIdToken();
+      // Uses the ApiConstants we set up earlier!
+      final url = Uri.parse('${ApiConstants.baseUrl}/get-location/$targetUid');
+
+      final response = await http.get(
+        url,
+        headers: {"Authorization": "Bearer $token"},
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        return data['location']; // Returns {latitude: X, longitude: Y, updated_at: Z}
+      } else {
+        debugPrint("❌ Failed to fetch location: ${response.body}");
+        return null;
+      }
+    } catch (e) {
+      debugPrint("❌ Network error fetching location: $e");
+      return null;
+    }
+  }
+
+  Future<bool> updateLocation(double lat, double lng) async {
+    try {
+      final user = FirebaseAuth.instance.currentUser;
+      if (user == null) return false;
+
+      final token = await user.getIdToken();
+      final url = Uri.parse('${ApiConstants.baseUrl}/update-location');
+
+      final response = await http.post(
+        url,
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer $token"
+        },
+        body: jsonEncode({
+          "latitude": lat,
+          "longitude": lng,
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        debugPrint("📍 Location successfully updated in backend!");
+        return true;
+      } else {
+        debugPrint("❌ Failed to update location: ${response.body}");
+        return false;
+      }
+    } catch (e) {
+      debugPrint("❌ Network error updating location: $e");
+      return false;
+    }
+  }
+  // --- TO SAVE A NEW GEOFENCE PLACE ---
+  Future<bool> addSavedPlace(String name, double lat, double lng) async {
+    try {
+      final user = FirebaseAuth.instance.currentUser;
+      if (user == null) return false;
+
+      final token = await user.getIdToken();
+      final url = Uri.parse('${ApiConstants.baseUrl}/add-saved-place');
+
+      final response = await http.post(
+        url,
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer $token"
+        },
+        body: jsonEncode({
+          "name": name,
+          "latitude": lat,
+          "longitude": lng,
+        }),
+      );
+
+      if (response.statusCode == 201) {
+        debugPrint("✅ Place saved successfully!");
+        return true;
+      } else {
+        debugPrint("❌ Failed to save place: ${response.body}");
+        return false;
+      }
+    } catch (e) {
+      debugPrint("❌ Network error saving place: $e");
+      return false;
+    }
+  }
+  Future<List<Map<String, dynamic>>> getSavedPlaces() async {
+    try {
+      final user = FirebaseAuth.instance.currentUser;
+      if (user == null) return [];
+
+      final token = await user.getIdToken();
+      final url = Uri.parse('${ApiConstants.baseUrl}/get-saved-places');
+
+      final response = await http.get(
+        url,
+        headers: {"Authorization": "Bearer $token"},
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        // Convert the JSON list into a Dart List of Maps
+        return List<Map<String, dynamic>>.from(data['places']);
+      } else {
+        debugPrint("❌ Failed to fetch places: ${response.body}");
+        return [];
+      }
+    } catch (e) {
+      debugPrint("❌ Network error fetching places: $e");
+      return [];
     }
   }
 }
