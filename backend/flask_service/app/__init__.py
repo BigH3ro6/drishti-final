@@ -47,5 +47,8 @@ def create_app():
 
     from .routes.pairing_routes import pairing_bp
     app.register_blueprint(pairing_bp)
+    
+    from .routes.location_routes import location_bp
+    app.register_blueprint(location_bp)
 
     return app

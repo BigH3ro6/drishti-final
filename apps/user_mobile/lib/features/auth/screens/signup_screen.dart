@@ -9,6 +9,7 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:http/http.dart' as http;
+import 'package:user_mobile/core/constants/api_constants.dart';
 import 'dart:convert';
 
 class SignupScreen extends StatefulWidget {
@@ -34,7 +35,7 @@ class _SignupScreenState extends State<SignupScreen> {
 
       // 2. Get their secure ID Token (The "Security Badge" for your Python middleware)
       final token = await user.getIdToken();
-      final url = Uri.parse('http://192.168.1.11:5000/sync-profile');
+      final url = Uri.parse('${ApiConstants.baseUrl}/sync-profile');
 
       // 3. Send the request to Python
       final response = await http.post(
