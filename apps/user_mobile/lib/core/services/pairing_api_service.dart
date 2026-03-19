@@ -2,10 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:user_mobile/core/constants/api_constants.dart';
 
 class PairingApiService {
-  //current IP!
-  static const String baseUrl = 'http://192.168.1.11:5000';
 
   Future<String?> generatePairingCode() async {
     try {
@@ -14,7 +13,7 @@ class PairingApiService {
       if (user == null) return null;
 
       final token = await user.getIdToken();
-      final url = Uri.parse('$baseUrl/generate-code');
+      final url = Uri.parse('${ApiConstants.baseUrl}/generate-code');
 
       debugPrint("🔄 Requesting pairing code from backend...");
 
@@ -48,7 +47,7 @@ class PairingApiService {
       if (user == null) return false;
 
       final token = await user.getIdToken();
-      final url = Uri.parse('$baseUrl/link-caregiver');
+      final url = Uri.parse('${ApiConstants.baseUrl}/link-caregiver');
 
       debugPrint("🔄 Sending pairing code: $code");
 
@@ -79,7 +78,7 @@ class PairingApiService {
       if (user == null) return [];
 
       final token = await user.getIdToken();
-      final url = Uri.parse('$baseUrl/linked-users');
+      final url = Uri.parse('${ApiConstants.baseUrl}/linked-users');
 
       final response = await http.get(
         url,
@@ -105,7 +104,7 @@ class PairingApiService {
       if (user == null) return false;
 
       final token = await user.getIdToken();
-      final url = Uri.parse('$baseUrl/unlink-user');
+      final url = Uri.parse('${ApiConstants.baseUrl}/unlink-user');
 
       debugPrint("🔄 Requesting to unlink user: $targetUid");
 

@@ -3,8 +3,9 @@ import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
 import 'dart:convert';
 
+import 'package:user_mobile/core/constants/api_constants.dart';
+
 class WeatherApiService {
-  static const String backendUrl = 'http://192.168.1.11:5000';
 
   Future<String> fetchCurrentWeather() async {
     try {
@@ -26,7 +27,7 @@ class WeatherApiService {
       debugPrint("Location grabbed: ${position.latitude}, ${position.longitude}");
 
       // 3. Call your backend API endpoint
-      final url = Uri.parse('$backendUrl/api/weather?lat=${position.latitude}&lng=${position.longitude}');
+      final url = Uri.parse('${ApiConstants.baseUrl}/api/weather?lat=${position.latitude}&lng=${position.longitude}');
       final response = await http.get(url);
 
       // 4. Return the TTS string to the app
