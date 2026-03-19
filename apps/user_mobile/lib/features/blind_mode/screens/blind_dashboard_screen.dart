@@ -10,6 +10,9 @@ import 'package:volume_controller/volume_controller.dart';
 import 'package:battery_plus/battery_plus.dart';
 import 'package:intl/intl.dart';
 import 'package:user_mobile/core/services/pairing_api_service.dart';
+import 'package:user_mobile/core/services/live_location_service.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:geocoding/geocoding.dart';
 
 class BlindDashboardScreen extends StatefulWidget {
   const BlindDashboardScreen({super.key});
@@ -21,11 +24,12 @@ class BlindDashboardScreen extends StatefulWidget {
 class _BlindDashboardScreenState extends State<BlindDashboardScreen> {
   late VoiceAssistantService _voiceService;
   bool _isListeningUI = false; 
+  final LiveLocationService _locationService = LiveLocationService();
 
   @override
   void initState() {
     super.initState();
-    
+    _locationService.startTracking();
     // Initialize voice service and handle UI state changes
     _voiceService = VoiceAssistantService(
       onCommandRecognized: _handleVoiceCommand,
@@ -50,6 +54,12 @@ class _BlindDashboardScreenState extends State<BlindDashboardScreen> {
     });
   }
 
+  @override
+  void dispose() {
+    // Make sure to stop the timer if they close the screen
+    _locationService.stopTracking();
+    super.dispose();
+  }
   // Maps recognized voice commands to specific app features
   void _handleVoiceCommand(String command) async{
     setState(() => _isListeningUI = false); 
@@ -90,6 +100,31 @@ class _BlindDashboardScreenState extends State<BlindDashboardScreen> {
         break;
       case "current_location":
         _showDummyAction("📍 Finding Current Location...");
+        try {
+          // 1. Ask the phone for the exact current GPS coordinates
+          Position position = await Geolocator.getCurrentPosition(
+            desiredAccuracy: LocationAccuracy.high
+          );
+          
+          // 2. Translate the coordinates into a human-readable street name
+          List<Placemark> placemarks = await placemarkFromCoordinates(
+            position.latitude, position.longitude
+          );
+          
+          if (placemarks.isNotEmpty) {
+            Placemark place = placemarks[0];
+            // Format it to sound natural when spoken out loud
+            String address = "${place.street}, ${place.locality}";
+            
+            // 3. Speak the result to the user!
+            await _voiceService.speak("You are currently near $address.");
+          } else {
+            await _voiceService.speak("I found your location, but couldn't determine the exact street name.");
+          }
+        } catch (e) {
+          debugPrint("Location error: $e");
+          await _voiceService.speak("Sorry, I couldn't access your GPS. Please make sure your location services are turned on.");
+        }
         break;
       case "time":
         _showDummyAction("🕒 Checking Time...");
