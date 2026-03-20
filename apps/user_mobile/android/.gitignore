@@ -13,23 +13,5 @@ GeneratedPluginRegistrant.java
 key.properties
 **/*.keystore
 **/*.jks
-
-# Environments
-venv/
-env/
-.env
-
-# Python Cache
-__pycache__/
-*.pyc
-*.pyo
-
-# Secret Keys and Credentials
-*.pem
-*.key
-*secret*.json
-*admin*.json
-*credentials*.json
-firebase-adminsdk.json
-serviceAccountKey.json
+# Firebase config
 google-services.json
