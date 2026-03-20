@@ -25,7 +25,7 @@ class _VoiceMessagesScreenState extends State<VoiceMessagesScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       extendBodyBehindAppBar: true,
-      backgroundColor: AppColors.purpleDark, // Fallback color
+      backgroundColor: AppColors.primaryDark, // Fallback color
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -131,11 +131,11 @@ class _VoiceMessagesScreenState extends State<VoiceMessagesScreen> {
                   // Play/Pause Button
                   Container(
                     decoration: BoxDecoration(
-                      color: isMe ? Colors.white.withOpacity(0.2) : AppColors.purpleLight.withOpacity(0.1),
+                      color: isMe ? Colors.white.withOpacity(0.2) : AppColors.primaryLight.withOpacity(0.1),
                       shape: BoxShape.circle,
                     ),
                     child: IconButton(
-                      icon: Icon(isPlaying ? Icons.pause : Icons.play_arrow, color: isMe ? Colors.white : AppColors.purpleDark),
+                      icon: Icon(isPlaying ? Icons.pause : Icons.play_arrow, color: isMe ? Colors.white : AppColors.primaryDark),
                       onPressed: () {},
                     ),
                   ),
@@ -154,7 +154,7 @@ class _VoiceMessagesScreenState extends State<VoiceMessagesScreen> {
                         widthFactor: isPlaying ? 0.4 : 0.0,
                         child: Container(
                           decoration: BoxDecoration(
-                            color: isMe ? Colors.white : AppColors.purpleLight,
+                            color: isMe ? Colors.white : AppColors.primaryLight,
                             borderRadius: BorderRadius.circular(2),
                           ),
                         ),
@@ -194,7 +194,7 @@ class _VoiceMessagesScreenState extends State<VoiceMessagesScreen> {
           duration: const Duration(milliseconds: 200),
           padding: EdgeInsets.symmetric(vertical: _isRecording ? 18 : 15),
           decoration: BoxDecoration(
-            color: _isRecording ? Colors.redAccent : AppColors.purpleLight,
+            color: _isRecording ? Colors.redAccent : AppColors.primaryLight,
             borderRadius: BorderRadius.circular(30),
             boxShadow: _isRecording ? [BoxShadow(color: Colors.redAccent.withOpacity(0.4), blurRadius: 15)] : [],
           ),

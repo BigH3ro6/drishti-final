@@ -58,7 +58,7 @@ class _AuthGateState extends State<AuthGate> {
   Widget build(BuildContext context) {
     // This is the "Splash Screen" they see for a split second while we check
     return const Scaffold(
-      backgroundColor: AppColors.purpleDark, 
+      backgroundColor: AppColors.primaryDark, 
       body: Center(
         child: CircularProgressIndicator(color: Colors.white),
       ),

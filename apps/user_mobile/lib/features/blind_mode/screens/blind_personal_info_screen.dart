@@ -38,7 +38,7 @@ class BlindPersonalInfoScreen extends StatelessWidget {
                   onPressed: () {},
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.white,
-                    foregroundColor: AppColors.purpleDark,
+                    foregroundColor: AppColors.primaryDark,
                     minimumSize: const Size(double.infinity, 55),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
                   ),

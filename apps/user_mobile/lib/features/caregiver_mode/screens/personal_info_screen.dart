@@ -37,7 +37,7 @@ class PersonalInfoScreen extends StatelessWidget {
                 ElevatedButton(
                   onPressed: () {},
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.purpleLight,
+                    backgroundColor: AppColors.primaryLight,
                     minimumSize: const Size(double.infinity, 55),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
                   ),

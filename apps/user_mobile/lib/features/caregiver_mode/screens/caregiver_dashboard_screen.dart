@@ -239,7 +239,7 @@ class _CaregiverDashboardScreenState extends State<CaregiverDashboardScreen> {
                     decoration: BoxDecoration(
                       color: isOnline ? Colors.greenAccent : Colors.grey,
                       shape: BoxShape.circle,
-                      border: Border.all(color: AppColors.purpleDark, width: 2),
+                      border: Border.all(color: AppColors.primaryDark, width: 2),
                     ),
                   ),
                 ),

@@ -242,7 +242,7 @@ class _CaregiverProfileScreenState extends State<CaregiverProfileScreen> {
             Container(
               padding: const EdgeInsets.all(8),
               decoration: const BoxDecoration(
-                color: AppColors.purpleLight,
+                color: AppColors.primaryLight,
                 shape: BoxShape.circle,
               ),
               child: const Icon(Icons.camera_alt, color: Colors.white, size: 20),
@@ -295,7 +295,7 @@ class _CaregiverProfileScreenState extends State<CaregiverProfileScreen> {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               decoration: BoxDecoration(
-                color: AppColors.purpleLight,
+                color: AppColors.primaryLight,
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Text(

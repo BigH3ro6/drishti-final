@@ -226,7 +226,7 @@ class _AddPlaceScreenState extends State<AddPlaceScreen> {
                               contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
                               suffixIcon: _isSearching 
                                 ? const Padding(padding: EdgeInsets.all(12.0), child: CircularProgressIndicator(strokeWidth: 2))
-                                : const Icon(Icons.search, color: AppColors.purpleDark),
+                                : const Icon(Icons.search, color: AppColors.primaryDark),
                             ),
                           ),
                         ),
@@ -248,7 +248,7 @@ class _AddPlaceScreenState extends State<AddPlaceScreen> {
                         separatorBuilder: (context, index) => const Divider(height: 1),
                         itemBuilder: (context, index) {
                           return ListTile(
-                            leading: const Icon(Icons.location_on, color: AppColors.purpleLight),
+                            leading: const Icon(Icons.location_on, color: AppColors.primaryLight),
                             title: Text(
                               _placeList[index]['description'],
                               style: GoogleFonts.poppins(fontSize: 13),
@@ -285,7 +285,7 @@ class _AddPlaceScreenState extends State<AddPlaceScreen> {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text("Save Safe Zone", style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.purpleDark)),
+                  Text("Save Safe Zone", style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.primaryDark)),
                   const SizedBox(height: 5),
                   Text("Give this location a custom name.", style: GoogleFonts.poppins(fontSize: 12, color: Colors.grey[600])),
                   const SizedBox(height: 15),
@@ -294,7 +294,7 @@ class _AddPlaceScreenState extends State<AddPlaceScreen> {
                     decoration: InputDecoration(
                       hintText: "e.g., Campus, Hospital, Supermarket",
                       hintStyle: GoogleFonts.poppins(color: Colors.grey),
-                      prefixIcon: const Icon(Icons.bookmark, color: AppColors.purpleLight),
+                      prefixIcon: const Icon(Icons.bookmark, color: AppColors.primaryLight),
                       filled: true,
                       fillColor: Colors.grey[100],
                       border: OutlineInputBorder(borderRadius: BorderRadius.circular(15), borderSide: BorderSide.none),
@@ -306,7 +306,7 @@ class _AddPlaceScreenState extends State<AddPlaceScreen> {
                     height: 50,
                     child: ElevatedButton(
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.purpleDark,
+                        backgroundColor: AppColors.primaryDark,
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
                       ),
                       onPressed: _isSaving ? null : _savePlace,

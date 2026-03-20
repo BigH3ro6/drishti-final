@@ -165,8 +165,8 @@ class _MapTrackingScreenState extends State<MapTrackingScreen> with SingleTicker
             circleId: CircleId('circle_$placeId'),
             center: position,
             radius: 100, // The 100-meter safe zone radius!
-            fillColor: AppColors.purpleLight.withOpacity(0.2), 
-            strokeColor: AppColors.purpleDark, 
+            fillColor: AppColors.primaryLight.withOpacity(0.2), 
+            strokeColor: AppColors.primaryDark, 
             strokeWidth: 2,
           ),
         );
@@ -186,7 +186,7 @@ class _MapTrackingScreenState extends State<MapTrackingScreen> with SingleTicker
     final ui.PictureRecorder pictureRecorder = ui.PictureRecorder();
     final Canvas canvas = Canvas(pictureRecorder);
 
-    // 1. Draw the circular background/border (Using your AppColors.purpleDark)
+    // 1. Draw the circular background/border (Using your AppColors.primaryDark)
     final Paint borderPaint = Paint()
       ..color = const Color(0xFF2D1B6B) 
       ..isAntiAlias = true;
@@ -348,7 +348,7 @@ Widget _buildDraggableBottomSheet() {
                       Container(
                         margin: const EdgeInsets.symmetric(horizontal: 40),
                         decoration: BoxDecoration(
-                          color: AppColors.purpleLight.withOpacity(0.1), 
+                          color: AppColors.primaryLight.withOpacity(0.1), 
                           borderRadius: BorderRadius.circular(30), 
                         ),
                         child: TabBar(
@@ -357,12 +357,12 @@ Widget _buildDraggableBottomSheet() {
                           dividerHeight: 0, 
                           indicatorSize: TabBarIndicatorSize.tab,
                           indicator: BoxDecoration(
-                            color: AppColors.purpleLight.withOpacity(0.3), 
+                            color: AppColors.primaryLight.withOpacity(0.3), 
                             borderRadius: BorderRadius.circular(30), 
                           ),
                           tabs: const [
-                            Tab(icon: Icon(Icons.people_alt, color: AppColors.purpleDark)),
-                            Tab(icon: Icon(Icons.domain, color: AppColors.purpleDark)),
+                            Tab(icon: Icon(Icons.people_alt, color: AppColors.primaryDark)),
+                            Tab(icon: Icon(Icons.domain, color: AppColors.primaryDark)),
                           ],
                         ),
                       ),
@@ -397,7 +397,7 @@ Widget _buildDraggableBottomSheet() {
                   children: [
                     Stack(
                       children: [
-                        CircleAvatar(radius: 35, backgroundColor: AppColors.purpleDark, child: Text(user["name"][0], style: GoogleFonts.poppins(color: Colors.white, fontSize: 24))),
+                        CircleAvatar(radius: 35, backgroundColor: AppColors.primaryDark, child: Text(user["name"][0], style: GoogleFonts.poppins(color: Colors.white, fontSize: 24))),
                         Positioned(bottom: 0, right: 0, child: Container(padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2), decoration: BoxDecoration(color: Colors.green, borderRadius: BorderRadius.circular(10), border: Border.all(color: Colors.white, width: 2)), child: const Icon(Icons.battery_charging_full, size: 10, color: Colors.white)))
                       ],
                     ),
@@ -409,8 +409,8 @@ Widget _buildDraggableBottomSheet() {
                           Text(user["name"], style: GoogleFonts.poppins(fontWeight: FontWeight.bold, fontSize: 16)),
                           Text(user["location"], style: GoogleFonts.poppins(fontSize: 12, color: Colors.grey[600])),
                           const SizedBox(height: 10),
-                          Row(children: [const Icon(Icons.directions_walk, size: 16, color: AppColors.purpleLight), const SizedBox(width: 5), Text(user["steps"], style: GoogleFonts.poppins(fontSize: 12))]),
-                          Row(children: [const Icon(Icons.directions_car, size: 16, color: AppColors.purpleLight), const SizedBox(width: 5), Text(user["dist"], style: GoogleFonts.poppins(fontSize: 12))]),
+                          Row(children: [const Icon(Icons.directions_walk, size: 16, color: AppColors.primaryLight), const SizedBox(width: 5), Text(user["steps"], style: GoogleFonts.poppins(fontSize: 12))]),
+                          Row(children: [const Icon(Icons.directions_car, size: 16, color: AppColors.primaryLight), const SizedBox(width: 5), Text(user["dist"], style: GoogleFonts.poppins(fontSize: 12))]),
                           Row(children: [const Icon(Icons.wifi, size: 16, color: Colors.green), const SizedBox(width: 5), Text("Connected • ${user["battery"]}%", style: GoogleFonts.poppins(fontSize: 12, color: Colors.green))]),
                         ],
                       ),
@@ -439,7 +439,7 @@ Widget _buildPlacesSliverList() {
               children: [
                 ListTile(
                   leading: const CircleAvatar(
-                    backgroundColor: AppColors.purpleLight, 
+                    backgroundColor: AppColors.primaryLight, 
                     child: Icon(Icons.location_on, color: Colors.white, size: 20)
                   ),
                   title: Text(place['name'] ?? "Saved Place", style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
@@ -447,7 +447,7 @@ Widget _buildPlacesSliverList() {
                   trailing: IconButton(
                     icon: Icon(
                       place['alerts_enabled'] == true ? Icons.notifications_active : Icons.notifications_off, 
-                      color: place['alerts_enabled'] == true ? AppColors.purpleDark : Colors.grey,
+                      color: place['alerts_enabled'] == true ? AppColors.primaryDark : Colors.grey,
                       size: 20
                     ),
                     onPressed: () {

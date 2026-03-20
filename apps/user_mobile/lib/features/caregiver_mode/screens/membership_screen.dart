@@ -180,7 +180,7 @@ class MembershipScreen extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: AppColors.purpleLight.withOpacity(0.3),
+              color: AppColors.primaryLight.withOpacity(0.3),
               shape: BoxShape.circle,
             ),
             child: Icon(icon, color: Colors.white, size: 22),

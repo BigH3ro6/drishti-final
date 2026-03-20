@@ -98,7 +98,7 @@ class VoiceChatListScreen extends StatelessWidget {
                       child: Container(
                         width: 14,
                         height: 14,
-                        decoration: BoxDecoration(color: Colors.greenAccent, shape: BoxShape.circle, border: Border.all(color: AppColors.purpleDark, width: 2)),
+                        decoration: BoxDecoration(color: Colors.greenAccent, shape: BoxShape.circle, border: Border.all(color: AppColors.primaryDark, width: 2)),
                       ),
                     ),
                 ],
