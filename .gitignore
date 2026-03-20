@@ -36,6 +36,17 @@ venv/
 env/
 .env
 
-# Cache files
+# Python Cache
 __pycache__/
 *.pyc
+*.pyo
+
+# Secret Keys and Credentials
+*.pem
+*.key
+*secret*.json
+*admin*.json
+*credentials*.json
+firebase-adminsdk.json
+serviceAccountKey.json
+google-services.json
