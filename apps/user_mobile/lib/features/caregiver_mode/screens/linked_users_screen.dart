@@ -73,7 +73,7 @@ class _LinkedUsersScreenState extends State<LinkedUsersScreen> {
 
                     const SizedBox(height: 30),
 
-                    // 3. Link New User Button (Wired up!)
+                    // 3. Link New User Button)
                     GestureDetector(
                       onTap: () async {
                         // Navigate to the pairing screen, and refresh the list when we come back!
@@ -102,8 +102,7 @@ class _LinkedUsersScreenState extends State<LinkedUsersScreen> {
     );
   }
 
-  // The visual tile builder
-// The upgraded visual tile builder
+  // The upgraded visual tile builder
   Widget _buildUserTile(Map<String, dynamic> user) {
     String name = user['name'] ?? "Unknown User";
     String role = user['role'] == "BLIND" ? "Visually Impaired" : "Caregiver";
@@ -117,9 +116,7 @@ class _LinkedUsersScreenState extends State<LinkedUsersScreen> {
           contentPadding: EdgeInsets.zero,
           leading: CircleAvatar(
             backgroundColor: Colors.white24,
-            // 1. If we have a URL, show the image from the internet!
             backgroundImage: profileImageUrl.isNotEmpty ? NetworkImage(profileImageUrl) : null,
-            // 2. If we don't have a URL, show the initial letter instead
             child: profileImageUrl.isEmpty 
                 ? Text(name.isNotEmpty ? name[0].toUpperCase() : "?", style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold))
                 : null,
@@ -135,6 +132,7 @@ class _LinkedUsersScreenState extends State<LinkedUsersScreen> {
       ),
     );
   }
+  
   void _showUserSettings(Map<String, dynamic> user) {
     String name = user['name'] ?? "Unknown User";
     String role = user['role'] == "BLIND" ? "Visually Impaired" : "Caregiver";
@@ -142,12 +140,12 @@ class _LinkedUsersScreenState extends State<LinkedUsersScreen> {
 
     showModalBottomSheet(
       context: context,
-      backgroundColor: Colors.transparent, // Let the glass effect shine through
+      backgroundColor: Colors.transparent, 
       builder: (context) {
         return Container(
           padding: const EdgeInsets.all(24),
           decoration: BoxDecoration(
-            color: const Color(0xFF1A1A2E), // A dark background to match your gradient
+            color: const Color(0xFF1A1A2E),
             borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
             border: Border.all(color: Colors.white12),
           ),
@@ -182,29 +180,28 @@ class _LinkedUsersScreenState extends State<LinkedUsersScreen> {
                 leading: const Icon(Icons.link_off, color: Colors.redAccent),
                 title: Text("Unlink User", style: GoogleFonts.poppins(color: Colors.redAccent)),
                 onTap: () async {
-                  // 1. Close the bottom menu immediately
+                  // Close the bottom menu immediately
                   Navigator.pop(context);
                   
-                  // 2. Show a quick loading message
+                  // Show a quick loading message
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(content: Text("Unlinking ${user['name']}..."), duration: const Duration(seconds: 1)),
                   );
-
-                  // 3. Call the backend to delete the link!
-                  String targetUid = user['uid']; // We get this from the API dictionary!
+                  String targetUid = user['id']; 
+                  
+                  //Call the backend to delete the link!
                   bool success = await _pairingService.unlinkUser(targetUid);
 
-                  if (success && mounted) {
-                    // 4. Show success message
+                  if (!context.mounted) return;
+
+                  if (success) {
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(content: Text("User unlinked successfully."), backgroundColor: Colors.green),
                     );
-                    
-                    // 5. INSTANT UI UPDATE: Remove them from the local list immediately!
                     setState(() {
-                      _linkedUsers.removeWhere((u) => u['uid'] == targetUid);
+                      _linkedUsers.removeWhere((u) => u['id'] == targetUid);
                     });
-                  } else if (mounted) {
+                  } else {
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(content: Text("Failed to unlink user."), backgroundColor: Colors.red),
                     );
