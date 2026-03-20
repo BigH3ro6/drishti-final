@@ -12,7 +12,7 @@ class VoiceAssistantService {
   bool _isListening = false;
   bool _isWakeWordListening = false;
 
-  final Function(String command) onCommandRecognized;
+  final Function(String command, String rawText) onCommandRecognized;
   final Function(bool isListening)? onListeningStateChanged;
 
   VoiceAssistantService({
@@ -26,6 +26,7 @@ class VoiceAssistantService {
     await _flutterTts.setLanguage("en-US");
     await _flutterTts.setSpeechRate(0.5); 
     await _flutterTts.setPitch(1.0);
+    await _flutterTts.awaitSpeakCompletion(true);
     
     await _speechToText.initialize(
       onError: (error) {
@@ -33,11 +34,9 @@ class VoiceAssistantService {
         _isListening = false;
         onListeningStateChanged?.call(false);
         
-        if (error.errorMsg == 'error_speech_timeout') {
-          speak("I didn't hear anything. Tap the screen to try again.");
+       if (error.errorMsg == 'error_speech_timeout' || error.errorMsg == 'error_no_match') {
+          speak("I missed that. Please tap the screen and try again.");
         }
-        
-        // If STT fails or times out, go back to listening for the wake word
         _startWakeWordListening();
       },
       onStatus: (status) {
@@ -81,7 +80,6 @@ void _wakeWordCallback(int keywordIndex) async {
 
   // Safely starts the background listener
 Future<void> _startWakeWordListening() async {
-    // 1. If it's already listening (or preparing to listen), ignore!
     if (_isWakeWordListening) return; 
 
     _isWakeWordListening = true; 
@@ -95,7 +93,6 @@ Future<void> _startWakeWordListening() async {
       
     } catch (e) {
       debugPrint("Failed to start wake word: $e");
-      // Only unlock if it actually crashed
       _isWakeWordListening = false; 
     }
   }
@@ -125,17 +122,17 @@ Future<void> _startWakeWordListening() async {
         _isListening = true;
         // Play an audio cue so the user knows they can talk
         await speak("Listening..."); 
+        await Future.delayed(const Duration(milliseconds: 500));
         
         _speechToText.listen(
           onResult: (result) {
-            // Wait until they finish their sentence
             if (result.finalResult) {
               _isListening = false;
               _processCommand(result.recognizedWords.toLowerCase());
             }
           },
           //Tell the engine to wait up to 5 seconds of silence before timing out
-          pauseFor: const Duration(seconds: 5),
+          pauseFor: const Duration(seconds: 3),
           // Set a maximum listening time of 10 seconds per command
           listenFor: const Duration(seconds: 10), 
         );
@@ -152,64 +149,68 @@ Future<void> _startWakeWordListening() async {
   }
 
   // 5.Match the spoken words to the features!
-  void _processCommand(String text) {
+  Future<void> _processCommand(String text) async {
     debugPrint("User said: $text");
     
-    if (text.contains("call") && text.contains("caretaker") || text.contains("caregiver") || text.contains("doctor")) {
-      speak("Calling your caregiver.");
-      onCommandRecognized("call_caregiver");
+    if (text.contains("call") && (text.contains("caretaker") || text.contains("caregiver") || text.contains("doctor"))) {
+      await speak("Calling your caregiver."); // --- ADDED AWAIT ---
+      onCommandRecognized("call_caregiver",text);
       
     } else if (text.contains("currency") || text.contains("money")) {
-      speak("Activating currency recognition.");
-      onCommandRecognized("currency");
+      await speak("Activating currency recognition.");
+      onCommandRecognized("currency",text);
       
     } else if (text.contains("navigate") || text.contains("location") || text.contains("directions")) {
-      speak("Where would you like to go?");
-      onCommandRecognized("navigate");
+      await speak("Where would you like to go?");
+      onCommandRecognized("navigate",text);
       
     } else if (text.contains("weather")) {
-      speak("Checking the weather.");
-      onCommandRecognized("weather");
+      await speak("Checking the weather.");
+      onCommandRecognized("weather",text);
       
-    } else if (text.contains("message") || text.contains("voice note")) {
-      speak("Ready to send a message to your caregiver.");
-      onCommandRecognized("message_caregiver");
+    } else if (text.contains("play") && text.contains("message")) {
+      await speak("Checking for messages.");
+      onCommandRecognized("play_messages", text);
+      
+    } else if (text.contains("message") || text.contains("voice note") || text.contains("send")) {
+      await speak("Ready to send a voice to your caregiver."); // --- ADDED AWAIT ---
+      onCommandRecognized("message_caregiver",text);
       
     } else if (text.contains("sos") || text.contains("help") || text.contains("emergency")) {
-      speak("Activating S O S. Please wait.");
-      onCommandRecognized("sos");
+      await speak("Activating S O S. Please wait.");
+      onCommandRecognized("sos",text);
       
     } else if (text.contains("obstacle") || text.contains("detect")) {
-      speak("Activating obstacle detection.");
-      onCommandRecognized("obstacle");
+      await speak("Activating obstacle detection.");
+      onCommandRecognized("obstacle",text);
       
-    }
-    else if (text.contains("read") || text.contains("text") || text.contains("document")) {
-      speak("Opening document scanner.");
-      onCommandRecognized("read_text");
+    } else if (text.contains("read") || text.contains("text") || text.contains("document")) {
+      await speak("Opening document scanner.");
+      onCommandRecognized("read_text",text);
       
     } else if (text.contains("where am i") || text.contains("current location")) {
-      speak("Fetching your current location.");
-      onCommandRecognized("current_location");
+      await speak("Fetching your current location.");
+      onCommandRecognized("current_location",text);
       
     } else if (text.contains("time")) {
-      speak("Checking time.");
-      onCommandRecognized("time");
+      await speak("Checking time.");
+      onCommandRecognized("time",text);
       
     } else if (text.contains("battery")) {
-      speak("Checking battery.");
-      onCommandRecognized("battery");
+      await speak("Checking battery.");
+      onCommandRecognized("battery",text);
       
     } else if (text.contains("status")) {
-      speak("Checking system status.");
-      onCommandRecognized("system_status");
+      await speak("Checking system status.");
+      onCommandRecognized("system_status",text);
 
     } else if (text.contains("pair") || text.contains("caregiver") || text.contains("link")) {
-      speak("Pairing mode activated.");
-      onCommandRecognized("pair_caregiver");
+      await speak("Pairing mode activated.");
+      onCommandRecognized("pair_caregiver",text);
       
     } else {
-      speak("I didn't catch that. Please try again.");
+      onCommandRecognized("raw_text", text); 
+      await speak("I heard: $text. If you want to call your caregiver, say 'Call Caregiver'. For messages, say 'Play Messages' or 'Send Message'.");
     }
   }
 }

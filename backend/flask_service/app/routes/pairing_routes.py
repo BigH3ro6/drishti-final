@@ -47,10 +47,19 @@ def link_caregiver():
     # 5. Find out which Blind User generated this code
     blind_uid = code_doc.to_dict().get('blind_user_uid')
     
-    # 6. Link them together in the database!
-    # (We save the Caregiver under the Blind User and the Blind User under the Caregiver)
-    db.collection('users').document(blind_uid).collection('linked_caregivers').document(caregiver_uid).set({"status": "linked"})
-    db.collection('users').document(caregiver_uid).collection('linked_blind_users').document(blind_uid).set({"status": "linked"})
+    # 6. Link them together in the database AND create a shared Chat ID!
+    # By combining their UIDs, we guarantee they always share the exact same room
+    chat_id = f"chat_{blind_uid}_{caregiver_uid}"
+    
+    db.collection('users').document(blind_uid).collection('linked_caregivers').document(caregiver_uid).set({
+        "status": "linked",
+        "chat_id": chat_id 
+    })
+    
+    db.collection('users').document(caregiver_uid).collection('linked_blind_users').document(blind_uid).set({
+        "status": "linked",
+        "chat_id": chat_id  
+    })
     
     # 7. Deactivate the code so no one else can ever use it again
     code_ref.update({"status": "used"})
@@ -79,45 +88,70 @@ def get_linked_users():
     # 3. Get all the linked IDs
     links = db.collection('users').document(uid).collection(sub_col).get()
 
-    # 4. Fetch the actual profile data (Name, Role, etc.) for each ID
+    # 4. Fetch the actual profile data and format it for Flutter!
     for link in links:
         linked_uid = link.id
+        link_data = link.to_dict() or {}
+        
+        # Grab the chat_id we saved during the pairing process
+        chat_id = link_data.get("chat_id", f"chat_{uid}_{linked_uid}") 
+        
         linked_profile = db.collection('users').document(linked_uid).get()
         if linked_profile.exists:
             profile_data = linked_profile.to_dict()
-            profile_data['uid'] = linked_uid 
-            linked_users.append(profile_data)
+            
+            # FORMAT THE DICTIONARY EXACTLY HOW FLUTTER EXPECTS IT:
+            formatted_user = {
+                "id": linked_uid, 
+                # Note: If your DB uses 'firstName' and 'lastName', change this to combine them!
+                "name": profile_data.get('name', 'Unknown User'), 
+                "chatId": chat_id
+            }
+            
+            # Optional: Add the rest of the profile data back in just in case Flutter needs it later
+            formatted_user.update(profile_data) 
+            
+            linked_users.append(formatted_user)
 
     return jsonify({"linked_users": linked_users}), 200
 
 @pairing_bp.route('/unlink-user', methods=['POST'])
 @require_auth
 def unlink_user():
-    uid = request.user_uid
-    target_uid = request.json.get('target_uid')
-    
-    if not target_uid:
-        return jsonify({"error": "Missing target_uid parameter"}), 400
+    try:
+        uid = request.user_uid
+        
+        # Safely parse the JSON payload
+        data = request.get_json(silent=True) or {}
+        target_uid = data.get('target_uid')
+        
+        if not target_uid:
+            return jsonify({"error": "Missing target_uid parameter"}), 400
 
-    # 1. Find out who is asking so we know which folders to look in
-    user_doc = db.collection('users').document(uid).get()
-    if not user_doc.exists:
-        return jsonify({"error": "User profile not found"}), 404
+        # 1. Find out who is asking
+        user_doc = db.collection('users').document(uid).get()
+        if not user_doc.exists:
+            return jsonify({"error": "User profile not found"}), 404
 
-    role = user_doc.to_dict().get('role')
+        # 2. Make the role check completely case-insensitive!
+        role = str(user_doc.to_dict().get('role', '')).upper()
 
-    # 2. Assign the correct folder names based on the role
-    if role == 'CAREGIVER':
-        my_sub_col = 'linked_blind_users'
-        their_sub_col = 'linked_caregivers'
-    else:
-        my_sub_col = 'linked_caregivers'
-        their_sub_col = 'linked_blind_users'
+        # 3. Assign the correct folder names based on the role
+        if role == 'CAREGIVER':
+            my_sub_col = 'linked_blind_users'
+            their_sub_col = 'linked_caregivers'
+        else:
+            my_sub_col = 'linked_caregivers'
+            their_sub_col = 'linked_blind_users'
 
-    # 3. Delete the link from my profile
-    db.collection('users').document(uid).collection(my_sub_col).document(target_uid).delete()
-    
-    # 4. Delete the link from their profile
-    db.collection('users').document(target_uid).collection(their_sub_col).document(uid).delete()
+        # 4. Delete the link from my profile
+        db.collection('users').document(uid).collection(my_sub_col).document(target_uid).delete()
+        
+        # 5. Delete the link from their profile
+        db.collection('users').document(target_uid).collection(their_sub_col).document(uid).delete()
 
-    return jsonify({"message": "Successfully unlinked users!"}), 200
+        return jsonify({"message": "Successfully unlinked users!"}), 200
+
+    except Exception as e:
+        print(f"Unlink Error: {e}")
+        return jsonify({"error": str(e)}), 500

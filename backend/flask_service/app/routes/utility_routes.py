@@ -2,12 +2,14 @@ import os
 import requests
 from flask import Blueprint, request, jsonify, current_app
 from dotenv import load_dotenv
+import uuid
+from datetime import datetime, timezone
+import cloudinary
+import cloudinary.uploader
 
 env_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), '.env')
 print(f"Loading .env from: {env_path}")
 load_dotenv(env_path)
-
-from ..services.storage_service import upload_audio_file, save_message_to_firestore
 
 utility_bp = Blueprint('utility', __name__)
 
@@ -55,77 +57,116 @@ def get_weather():
         return jsonify({"error": f"Unexpected error: {str(e)}"}), 500
 
 
-@utility_bp.route('/api/voice/upload', methods=['POST'])
-def upload_voice():
-    if 'audio' not in request.files:
-        return jsonify({"error": "No audio file provided"}), 400
-    
-    audio_file = request.files['audio']
-    sender_id = request.form.get('sender_id')
-    receiver_id = request.form.get('receiver_id')
-    chat_id = request.form.get('chat_id')
-    
-    if not all([sender_id, receiver_id, chat_id]):
-        return jsonify({"error": "Missing required parameters: sender_id, receiver_id, chat_id"}), 400
-    
-    try:
-        upload_result = upload_audio_file(audio_file, sender_id, chat_id)
-        
-        db = current_app.db
-        message_id = save_message_to_firestore(
-            db=db,
-            sender_id=sender_id,
-            receiver_id=receiver_id,
-            chat_id=chat_id,
-            audio_url=upload_result['download_url']
-        )
-        
-        return jsonify({
-            "status": "success",
-            "voice_message": {
-                "id": message_id,
-                "type": "voice",
-                "chat_id": chat_id,
-                "sender_id": sender_id,
-                "receiver_id": receiver_id,
-                "audio_url": upload_result['download_url'],
-                "duration": upload_result.get('duration'),
-                "timestamp": upload_result.get('timestamp')
-            }
-        }), 200
-        
-    except Exception as e:
-        error_msg = str(e)
-        if "bucket does not exist" in error_msg:
-            return jsonify({
-                "error": "Firebase Storage bucket not configured",
-                "details": "Please enable Firebase Storage and update FIREBASE_STORAGE_BUCKET in .env"
-            }), 500
-        return jsonify({"error": f"Upload failed: {str(e)}"}), 500
-
-
 @utility_bp.route('/api/voice/messages', methods=['GET'])
 def get_voice_messages():
-    chat_id = request.args.get('chat_id')
-    
-    if not chat_id:
-        return jsonify({"error": "Missing chat_id parameter"}), 400
-    
     try:
+        chat_id = request.args.get('chat_id')
+
+        if not chat_id:
+            return jsonify({"error": "chat_id is required"}), 400
+
         db = current_app.db
-        messages_ref = db.collection('messages').where('chat_id', '==', chat_id).get()
-        
+        messages_ref = db.collection('messages').where('chat_id', '==', chat_id)
+        docs = messages_ref.stream()
+
         messages = []
-        for doc in messages_ref:
+        for doc in docs:
             msg_data = doc.to_dict()
-            msg_data['id'] = doc.id
+            if 'id' not in msg_data:
+                msg_data['id'] = doc.id
             messages.append(msg_data)
-        
+
+        def safe_sort_key(msg):
+            ts = msg.get('timestamp')
+            if hasattr(ts, 'timestamp'):
+                return ts.timestamp()
+            elif isinstance(ts, str):
+                try:
+                    # Convert the string into a sortable number
+                    dt = datetime.strptime(ts, '%a, %d %b %Y %H:%M:%S GMT')
+                    return dt.timestamp()
+                except Exception:
+                    return 0 # Put unreadable strings at the top
+                    
+            return 0 
+        messages.sort(key=safe_sort_key)
+
         return jsonify({
             "status": "success",
             "messages": messages,
-            "count": len(messages)
+            "count": len(messages) 
+        }), 200
+
+    except Exception as e:
+        print(f"Fetch Error: {e}")
+        return jsonify({"error": str(e)}), 500
+
+
+@utility_bp.route('/api/voice/messages/<message_id>', methods=['DELETE'])
+def delete_voice_message(message_id):
+    try:
+        db = current_app.db
+        
+        # Target the specific document in the 'messages' collection and delete it
+        db.collection('messages').document(message_id).delete()
+        
+        return jsonify({
+            "status": "success", 
+            "message": f"Message {message_id} deleted successfully"
         }), 200
         
     except Exception as e:
-        return jsonify({"error": f"Failed to fetch messages: {str(e)}"}), 500
+        return jsonify({"error": f"Failed to delete message: {str(e)}"}), 500
+    
+@utility_bp.route('/api/voice/upload', methods=['POST'])
+def upload_voice_message():
+    try:
+        # 1. Grab the metadata from the Flutter request
+        sender_id = request.form.get('sender_id')
+        receiver_id = request.form.get('receiver_id')
+        chat_id = request.form.get('chat_id')
+        
+        # 2. Grab the actual audio file
+        if 'audio' not in request.files:
+            return jsonify({"error": "No audio file provided"}), 400
+            
+        audio_file = request.files['audio']
+        
+        # 3. Upload to Cloudinary 
+        # Note: resource_type='video' is required for audio files in Cloudinary!
+        upload_result = cloudinary.uploader.upload(
+            audio_file, 
+            resource_type="video",
+            folder="drishti/voice_notes" # Keeps your cloud storage organized
+        )
+        
+        # This is the "content_url" your Flutter UI is looking for!
+        audio_url = upload_result.get('secure_url') 
+        
+        # 4. Save the metadata to Firestore
+        db = current_app.db # Assuming you attached your Firestore client to current_app
+        message_id = str(uuid.uuid4())
+        
+        message_data = {
+            "id": message_id,
+            "chat_id": chat_id,
+            "sender_id": sender_id,
+            "receiver_id": receiver_id,
+            "content_url": audio_url,
+            "timestamp": datetime.now(timezone.utc).strftime('%a, %d %b %Y %H:%M:%S GMT'),
+            "read_status": False,
+            "type": "VOICE"
+        }
+        
+        db.collection('messages').document(message_id).set(message_data)
+        
+        return jsonify({
+            "status": "success",
+            "message": "Voice note uploaded",
+            "data": message_data
+        }), 200
+
+    except Exception as e:
+        print(f"Upload Error: {e}")
+        return jsonify({"error": str(e)}), 500
+

@@ -53,6 +53,8 @@ dependencies:
   volume_controller: ^3.4.3
   google_maps_flutter: ^2.16.0
   geocoding: ^4.0.0
+  record: ^6.2.0
+  audioplayers: ^6.6.0
 
 dev_dependencies:
   flutter_test:

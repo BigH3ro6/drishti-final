@@ -2,10 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:user_mobile/core/app_colors.dart';
 import 'package:user_mobile/core/services/voice_assistant_service.dart';
+import 'package:user_mobile/features/blind_mode/screens/blind_audio_player_screen.dart';
 import 'package:user_mobile/features/blind_mode/screens/blind_profile_screen.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:user_mobile/core/services/weather_api_service.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:user_mobile/features/blind_mode/screens/blind_voice_record_screen.dart';
 import 'package:volume_controller/volume_controller.dart';
 import 'package:battery_plus/battery_plus.dart';
 import 'package:intl/intl.dart';
@@ -23,14 +25,17 @@ class BlindDashboardScreen extends StatefulWidget {
 
 class _BlindDashboardScreenState extends State<BlindDashboardScreen> {
   late VoiceAssistantService _voiceService;
-  bool _isListeningUI = false; 
+  bool _isListeningUI = false;
   final LiveLocationService _locationService = LiveLocationService();
+  bool _isSelectingCaregiver = false;
+
+  final PairingApiService _pairingApi = PairingApiService();
+  List<Map<String, dynamic>> _caregivers = [];
 
   @override
   void initState() {
     super.initState();
     _locationService.startTracking();
-    // Initialize voice service and handle UI state changes
     _voiceService = VoiceAssistantService(
       onCommandRecognized: _handleVoiceCommand,
       onListeningStateChanged: (bool isListening) {
@@ -39,13 +44,14 @@ class _BlindDashboardScreenState extends State<BlindDashboardScreen> {
             _isListeningUI = isListening;
           });
         }
+        _fetchRealCaregivers();
       },
     );
 
     // Initialize background wake word listener
     String accessKey = dotenv.env['PICOVOICE_ACCESS_KEY'] ?? '';
     _voiceService.initWakeWord(accessKey);
-
+    _runStartupCheck();
     // Initial greeting
     Future.delayed(const Duration(seconds: 1), () {
       _voiceService.speak(
@@ -54,15 +60,39 @@ class _BlindDashboardScreenState extends State<BlindDashboardScreen> {
     });
   }
 
+  Future<void> _runStartupCheck() async {
+    await Future.delayed(const Duration(seconds: 1));
+    await _voiceService.speak("Welcome to Drishti. Tap anywhere on the screen and speak.");
+  }
+
+  Future<void> _fetchRealCaregivers() async {
+    final realList = await _pairingApi.getLinkedUsers();
+    
+    if (mounted) {
+      setState(() {
+        _caregivers = realList; 
+      });
+      debugPrint("Fetched Caregivers: $_caregivers");
+    }
+  }
+
   @override
   void dispose() {
-    // Make sure to stop the timer if they close the screen
     _locationService.stopTracking();
     super.dispose();
   }
+
   // Maps recognized voice commands to specific app features
-  void _handleVoiceCommand(String command) async{
-    setState(() => _isListeningUI = false); 
+  void _handleVoiceCommand(String command, String rawText) async {
+    if (mounted) {
+      setState(() {
+        _isListeningUI = false; 
+      });
+    }
+    if (_isSelectingCaregiver) {
+      _processCaregiverSelection(rawText);
+      return;
+    }
 
     switch (command) {
       case "call_caregiver":
@@ -78,15 +108,65 @@ class _BlindDashboardScreenState extends State<BlindDashboardScreen> {
         // 1. Tell the user we are working on it
         _showDummyAction("🌤️ Fetching Weather...");
         await _voiceService.speak("Checking the weather for your location...");
-        
+
         // 2. Call the backend API
         String weatherResult = await WeatherApiService().fetchCurrentWeather();
-        
+
         // 3. Speak the result out loud!
         await _voiceService.speak(weatherResult);
         break;
+      case "play_messages":
+        if (_caregivers.isEmpty) {
+          await _voiceService.speak("You don't have any paired caregivers yet.");
+        } else {
+          // Pass the Chat ID and Name of the first paired caregiver!
+          final targetCaregiver = _caregivers[0]; 
+
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => BlindAudioPlayerScreen(
+                chatId: targetCaregiver["chatId"] ?? "", 
+                caregiverName: targetCaregiver["name"] ?? "Caregiver",
+              ),
+            ),
+          );
+        }
+        break;
       case "message_caregiver":
-        _showDummyAction("🎙️ Opening Voice Recorder...");
+        if (_caregivers.isEmpty) {
+          // Safety check: No caregivers paired at all
+          await _voiceService.speak("You don't have any caregivers paired yet.");
+          
+        } else if (_caregivers.length == 1) {
+          final singleCaregiver = _caregivers[0];
+    
+          await _voiceService.speak("Getting ready to send a message to ${singleCaregiver['name']}.");
+          
+          if (mounted) {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => BlindVoiceRecordScreen(
+                  targetChatId: singleCaregiver["chatId"]!,
+                  targetCaregiverId: singleCaregiver["id"]!,
+                  caregiverName: singleCaregiver["name"]!,
+                ),
+              ),
+            );
+          }
+        } else {
+          _isSelectingCaregiver = true;
+          List<String> caregiverNames = _caregivers
+              .map((c) => c["name"]?.toString() ?? "Caregiver")
+              .toList();
+          String namesToSpeak = caregiverNames.join(", or ");
+
+          await _voiceService.speak(
+            "Which caregiver? Say the name. $namesToSpeak.",
+          );
+          await _voiceService.triggerManualListen();
+        }
         break;
       case "sos":
         _showDummyAction("🚨 ACTIVATING SOS!");
@@ -103,27 +183,32 @@ class _BlindDashboardScreenState extends State<BlindDashboardScreen> {
         try {
           // 1. Ask the phone for the exact current GPS coordinates
           Position position = await Geolocator.getCurrentPosition(
-            desiredAccuracy: LocationAccuracy.high
+            desiredAccuracy: LocationAccuracy.high,
           );
-          
+
           // 2. Translate the coordinates into a human-readable street name
           List<Placemark> placemarks = await placemarkFromCoordinates(
-            position.latitude, position.longitude
+            position.latitude,
+            position.longitude,
           );
-          
+
           if (placemarks.isNotEmpty) {
             Placemark place = placemarks[0];
             // Format it to sound natural when spoken out loud
             String address = "${place.street}, ${place.locality}";
-            
+
             // 3. Speak the result to the user!
             await _voiceService.speak("You are currently near $address.");
           } else {
-            await _voiceService.speak("I found your location, but couldn't determine the exact street name.");
+            await _voiceService.speak(
+              "I found your location, but couldn't determine the exact street name.",
+            );
           }
         } catch (e) {
           debugPrint("Location error: $e");
-          await _voiceService.speak("Sorry, I couldn't access your GPS. Please make sure your location services are turned on.");
+          await _voiceService.speak(
+            "Sorry, I couldn't access your GPS. Please make sure your location services are turned on.",
+          );
         }
         break;
       case "time":
@@ -155,7 +240,7 @@ class _BlindDashboardScreenState extends State<BlindDashboardScreen> {
           // 3. Network Connectivity
           final connectivityResult = await Connectivity().checkConnectivity();
           String networkStatus = "no internet connection";
-          
+
           if (connectivityResult.contains(ConnectivityResult.wifi)) {
             networkStatus = "connected to Wi-Fi";
           } else if (connectivityResult.contains(ConnectivityResult.mobile)) {
@@ -163,49 +248,91 @@ class _BlindDashboardScreenState extends State<BlindDashboardScreen> {
           }
 
           // 4. Volume Level (Returns 0.0 to 1.0, so we multiply by 100)
-          double volumeVal = await VolumeController.instance.getVolume();           int volumePercent = (volumeVal * 100).round();
+          double volumeVal = await VolumeController.instance.getVolume();
+          int volumePercent = (volumeVal * 100).round();
 
           // 5. Construct status report!
-          String fullStatus = "It is $timeString on $dateString. "
+          String fullStatus =
+              "It is $timeString on $dateString. "
               "Your battery is at $batteryLevel percent. "
               "You are $networkStatus, and your device volume is at $volumePercent percent.";
 
           await _voiceService.speak(fullStatus);
-          
         } catch (e) {
           debugPrint("System status error: $e");
-          await _voiceService.speak("I couldn't read the full system status right now.");
+          await _voiceService.speak(
+            "I couldn't read the full system status right now.",
+          );
         }
         break;
       case "pair_caregiver":
         _showDummyAction("🔗 Generating pairing code...");
-        
-        await _voiceService.speak("Getting your secure pairing code. Please wait.");
-        
+
+        await _voiceService.speak(
+          "Getting your secure pairing code. Please wait.",
+        );
+
         String? code = await PairingApiService().generatePairingCode();
-        
-        if (code != null) {
-          // 1. THE VISUAL FIX: Display the code on the screen for sighted helpers!
+
+        if (code != null) {  
           _showDummyAction("Pairing Code:\n$code");
-          
-          // 2. THE AUDIO FIX: Commas force the TTS engine to pause between characters.
           String spokenCode = code.split('').join(', ');
-          
-          String message = "Your pairing code is, $spokenCode. "
+
+          String message =
+              "Your pairing code is, $spokenCode. "
               "I will repeat that. $spokenCode. "
               "Please ask your caregiver to enter this code in their app.";
-              
+
           await _voiceService.speak(message);
         } else {
           _showDummyAction("❌ Connection Error");
-          await _voiceService.speak("Sorry, I couldn't generate a code right now. Please check your internet connection.");
+          await _voiceService.speak(
+            "Sorry, I couldn't generate a code right now. Please check your internet connection.",
+          );
         }
+        break;
+
+      case "raw_text":
+        // Fallback for random noise
+        await _voiceService.speak("I didn't catch that. Please try again.");
         break;
       default:
         break;
     }
   }
 
+  void _processCaregiverSelection(String rawText) async {
+    _isSelectingCaregiver = false; 
+    Map<String, dynamic>? selectedCaregiver;
+
+    // ---Loop through the names ---
+    for (int i = 0; i < _caregivers.length; i++) {
+      final String caregiverName = _caregivers[i]["name"].toString().toLowerCase();
+      final String caregiverNumber = (i + 1).toString(); // Checks for "1", "2", etc.
+
+      // If the user says their actual name, or their number in the list:
+      if (rawText.toLowerCase().contains(caregiverName) || rawText.contains(caregiverNumber)) {
+        selectedCaregiver = _caregivers[i];
+        break; 
+      }
+    }
+
+    if (selectedCaregiver != null) {
+      // Launch the recording screen with the dynamic IDs!
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => BlindVoiceRecordScreen(
+            targetChatId: selectedCaregiver!["chatId"]!,
+            targetCaregiverId: selectedCaregiver["id"]!,
+            caregiverName: selectedCaregiver["name"]!, 
+          ),
+        ),
+      );
+    } else {
+      await _voiceService.speak("I didn't recognize that caregiver. Selection cancelled.");
+    }
+  }
   // Temporary helper for testing command routing
   void _showDummyAction(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
@@ -223,7 +350,7 @@ class _BlindDashboardScreenState extends State<BlindDashboardScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      extendBodyBehindAppBar: true, 
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -231,24 +358,22 @@ class _BlindDashboardScreenState extends State<BlindDashboardScreen> {
           IconButton(
             icon: const Icon(Icons.settings, color: Colors.white, size: 30),
             onPressed: () {
-              // Pause microphone before navigating away
               if (_isListeningUI) {
                 _voiceService.stopListening();
                 setState(() => _isListeningUI = false);
               }
-              
+
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => const BlindProfileScreen(), 
+                  builder: (context) => const BlindProfileScreen(),
                 ),
               );
             },
           ),
-          const SizedBox(width: 10), 
+          const SizedBox(width: 10),
         ],
       ),
-      // Full-screen tap target for accessibility
       body: GestureDetector(
         onTap: () async {
           setState(() => _isListeningUI = true);
