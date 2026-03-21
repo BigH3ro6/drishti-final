@@ -8,6 +8,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:user_mobile/core/services/weather_api_service.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:user_mobile/features/blind_mode/screens/blind_voice_record_screen.dart';
+import 'package:user_mobile/features/blind_mode/screens/blind_walking_mode_screen.dart';
 import 'package:volume_controller/volume_controller.dart';
 import 'package:battery_plus/battery_plus.dart';
 import 'package:intl/intl.dart';
@@ -71,15 +72,17 @@ class _BlindDashboardScreenState extends State<BlindDashboardScreen> {
 
   Future<void> _runStartupCheck() async {
     await Future.delayed(const Duration(seconds: 1));
-    await _voiceService.speak("Welcome to Drishti. Tap anywhere on the screen and speak.");
+    await _voiceService.speak(
+      "Welcome to Drishti. Tap anywhere on the screen and speak.",
+    );
   }
 
   Future<void> _fetchRealCaregivers() async {
     final realList = await _pairingApi.getLinkedUsers();
-    
+
     if (mounted) {
       setState(() {
-        _caregivers = realList; 
+        _caregivers = realList;
       });
       debugPrint("Fetched Caregivers: $_caregivers");
     }
@@ -91,20 +94,25 @@ class _BlindDashboardScreenState extends State<BlindDashboardScreen> {
     _telemetryService.stopTelemetry();
     super.dispose();
   }
+
   Future<void> _makePhoneCall(String? phoneNumber, String caregiverName) async {
     if (phoneNumber == null || phoneNumber.isEmpty) {
-      await _voiceService.speak("Sorry, I don't have a phone number saved for $caregiverName.");
+      await _voiceService.speak(
+        "Sorry, I don't have a phone number saved for $caregiverName.",
+      );
       return;
     }
-    
+
     await _voiceService.speak("Calling $caregiverName.");
-    
+
     // 1. Trigger the direct phone call!
     bool? didCall = await FlutterPhoneDirectCaller.callNumber(phoneNumber);
-    
+
     // 2. Handle failures (e.g., if the user denied the phone permission)
     if (didCall == null || !didCall) {
-      await _voiceService.speak("I was unable to place the call. Please ensure phone permissions are granted in your settings.");
+      await _voiceService.speak(
+        "I was unable to place the call. Please ensure phone permissions are granted in your settings.",
+      );
     }
   }
 
@@ -112,7 +120,7 @@ class _BlindDashboardScreenState extends State<BlindDashboardScreen> {
   void _handleVoiceCommand(String command, String rawText) async {
     if (mounted) {
       setState(() {
-        _isListeningUI = false; 
+        _isListeningUI = false;
       });
     }
     if (_isSelectingCaregiver) {
@@ -123,13 +131,18 @@ class _BlindDashboardScreenState extends State<BlindDashboardScreen> {
     switch (command) {
       case "call_caregiver":
         if (_caregivers.isEmpty) {
-          await _voiceService.speak("You don't have any caregivers paired yet.");
+          await _voiceService.speak(
+            "You don't have any caregivers paired yet.",
+          );
         } else if (_caregivers.length == 1) {
           final singleCaregiver = _caregivers[0];
-          await _makePhoneCall(singleCaregiver['phone'], singleCaregiver['name'] ?? "Caregiver");
+          await _makePhoneCall(
+            singleCaregiver['phone'],
+            singleCaregiver['name'] ?? "Caregiver",
+          );
         } else {
           _isSelectingCaregiver = true;
-          _pendingCaregiverAction = "call"; 
+          _pendingCaregiverAction = "call";
           List<String> caregiverNames = _caregivers
               .map((c) => c["name"]?.toString() ?? "Caregiver")
               .toList();
@@ -160,16 +173,18 @@ class _BlindDashboardScreenState extends State<BlindDashboardScreen> {
         break;
       case "play_messages":
         if (_caregivers.isEmpty) {
-          await _voiceService.speak("You don't have any paired caregivers yet.");
+          await _voiceService.speak(
+            "You don't have any paired caregivers yet.",
+          );
         } else {
           // Pass the Chat ID and Name of the first paired caregiver!
-          final targetCaregiver = _caregivers[0]; 
+          final targetCaregiver = _caregivers[0];
 
           Navigator.push(
             context,
             MaterialPageRoute(
               builder: (context) => BlindAudioPlayerScreen(
-                chatId: targetCaregiver["chatId"] ?? "", 
+                chatId: targetCaregiver["chatId"] ?? "",
                 caregiverName: targetCaregiver["name"] ?? "Caregiver",
               ),
             ),
@@ -179,13 +194,16 @@ class _BlindDashboardScreenState extends State<BlindDashboardScreen> {
       case "message_caregiver":
         if (_caregivers.isEmpty) {
           // Safety check: No caregivers paired at all
-          await _voiceService.speak("You don't have any caregivers paired yet.");
-          
+          await _voiceService.speak(
+            "You don't have any caregivers paired yet.",
+          );
         } else if (_caregivers.length == 1) {
           final singleCaregiver = _caregivers[0];
-    
-          await _voiceService.speak("Getting ready to send a message to ${singleCaregiver['name']}.");
-          
+
+          await _voiceService.speak(
+            "Getting ready to send a message to ${singleCaregiver['name']}.",
+          );
+
           if (mounted) {
             Navigator.push(
               context,
@@ -214,55 +232,101 @@ class _BlindDashboardScreenState extends State<BlindDashboardScreen> {
         break;
       case "sos":
         _showDummyAction("🚨 ACTIVATING SOS!");
-        
+
         try {
           // Grab the live emergency GPS coordinates
           Position position = await Geolocator.getCurrentPosition(
             desiredAccuracy: LocationAccuracy.high,
           );
-          
+
           // Hit the Python backend!
-          bool success = await SafetyApiService().triggerSOS(position.latitude, position.longitude);
-          
+          bool success = await SafetyApiService().triggerSOS(
+            position.latitude,
+            position.longitude,
+          );
+
           if (success) {
             // Speak ONLY ONCE when the alert is successfully sent
-            await _voiceService.speak("S O S activated. Your caregivers have been alerted.");
+            await _voiceService.speak(
+              "S O S activated. Your caregivers have been alerted.",
+            );
           } else {
-            await _voiceService.speak("Failed to send alert to the server. Please call for help immediately.");
+            await _voiceService.speak(
+              "Failed to send alert to the server. Please call for help immediately.",
+            );
           }
         } catch (e) {
           debugPrint("SOS Location Error: $e");
           // Fallback: Send with 0.0, 0.0 if GPS fails so the Caregiver still gets the alarm!
           bool success = await SafetyApiService().triggerSOS(0.0, 0.0);
           if (success) {
-             await _voiceService.speak("S O S activated without location. Caregivers alerted.");
+            await _voiceService.speak(
+              "S O S activated without location. Caregivers alerted.",
+            );
           }
         }
         break;
       case "obstacle":
-        _showDummyAction("🚧 Opening Obstacle Detection...");
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => const BlindWalkingModeScreen(),
+          ),
+        );
         break;
-     case "read_text":
+      case "describe":
+        // 1. Open our custom accessible camera!
+        final XFile? image = await Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => const AccessibleCameraScreen(
+              instructionText: "Scene describer ready. Point your phone ahead and tap anywhere to capture.",
+            ),
+          ),
+        );
+        
+        // 2. Process the image through the Cloud API
+        if (image != null) {
+          await _voiceService.speak("Analyzing scene. Please wait.");
+          
+          final String? description = await VisionApiService().describeSurroundings(image.path);
+          
+          if (description != null && description.isNotEmpty) {
+            await _voiceService.speak("Here is what I see: $description");
+          } else {
+            await _voiceService.speak("I couldn't analyze the scene right now. Please check your internet connection and try again.");
+          }
+        } else {
+          await _voiceService.speak("Scan cancelled.");
+        }
+        break;
+      case "read_text":
         // 1. Open our custom full-screen camera and pass the OCR instructions!
         final XFile? image = await Navigator.push(
           context,
           MaterialPageRoute(
             builder: (context) => const AccessibleCameraScreen(
-              instructionText: "Document scanner ready. Point your phone at the text and tap anywhere on the screen to capture.",
+              instructionText:
+                  "Document scanner ready. Point your phone at the text and tap anywhere on the screen to capture.",
             ),
           ),
         );
-        
+
         // 2. If they took a picture, send it to Python!
         if (image != null) {
           await _voiceService.speak("Processing image. Please wait.");
-          
-          final String? extractedText = await VisionApiService().readTextFromImage(image.path);
-          
-          if (extractedText != null && extractedText.isNotEmpty && extractedText != "No text detected") {
+
+          final String? extractedText = await VisionApiService()
+              .readTextFromImage(image.path);
+
+          if (extractedText != null &&
+              extractedText.isNotEmpty &&
+              extractedText != "No text detected") {
             await _voiceService.speak("Here is what I read: $extractedText");
           } else {
-            await _voiceService.speak("I couldn't detect any readable text. Please ensure the area is well lit and try again.");
+            await _voiceService.speak(
+              "I couldn't detect any readable text. Please ensure the area is well lit and try again.",
+            );
           }
         } else {
           await _voiceService.speak("Scan cancelled.");
@@ -363,7 +427,7 @@ class _BlindDashboardScreenState extends State<BlindDashboardScreen> {
 
         String? code = await PairingApiService().generatePairingCode();
 
-        if (code != null) {  
+        if (code != null) {
           _showDummyAction("Pairing Code:\n$code");
           String spokenCode = code.split('').join(', ');
 
@@ -391,25 +455,32 @@ class _BlindDashboardScreenState extends State<BlindDashboardScreen> {
   }
 
   void _processCaregiverSelection(String rawText) async {
-    _isSelectingCaregiver = false; 
+    _isSelectingCaregiver = false;
     Map<String, dynamic>? selectedCaregiver;
 
     // ---Loop through the names ---
     for (int i = 0; i < _caregivers.length; i++) {
-      final String caregiverName = _caregivers[i]["name"].toString().toLowerCase();
-      final String caregiverNumber = (i + 1).toString(); // Checks for "1", "2", etc.
+      final String caregiverName = _caregivers[i]["name"]
+          .toString()
+          .toLowerCase();
+      final String caregiverNumber = (i + 1)
+          .toString(); // Checks for "1", "2", etc.
 
       // If the user says their actual name, or their number in the list:
-      if (rawText.toLowerCase().contains(caregiverName) || rawText.contains(caregiverNumber)) {
+      if (rawText.toLowerCase().contains(caregiverName) ||
+          rawText.contains(caregiverNumber)) {
         selectedCaregiver = _caregivers[i];
-        break; 
+        break;
       }
     }
 
     if (selectedCaregiver != null) {
       if (_pendingCaregiverAction == "call") {
         // ACTION: Trigger the phone dialer!
-        await _makePhoneCall(selectedCaregiver["phone"], selectedCaregiver["name"] ?? "Caregiver");
+        await _makePhoneCall(
+          selectedCaregiver["phone"],
+          selectedCaregiver["name"] ?? "Caregiver",
+        );
       } else {
         // ACTION: Default to voice message screen!
         Navigator.push(
@@ -418,17 +489,20 @@ class _BlindDashboardScreenState extends State<BlindDashboardScreen> {
             builder: (context) => BlindVoiceRecordScreen(
               targetChatId: selectedCaregiver!["chatId"]!,
               targetCaregiverId: selectedCaregiver["id"]!,
-              caregiverName: selectedCaregiver["name"]!, 
+              caregiverName: selectedCaregiver["name"]!,
             ),
           ),
         );
       }
     } else {
-      await _voiceService.speak("I didn't recognize that caregiver. Selection cancelled.");
+      await _voiceService.speak(
+        "I didn't recognize that caregiver. Selection cancelled.",
+      );
     }
     // Reset the pending action so it's clean for next time
     _pendingCaregiverAction = "";
   }
+
   // Temporary helper for testing command routing
   void _showDummyAction(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
