@@ -17,6 +17,9 @@ import 'package:geolocator/geolocator.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:user_mobile/core/services/system_telemetry_service.dart';
 import 'package:user_mobile/core/services/safety_api_service.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:user_mobile/core/services/vision_api_service.dart';
+import 'package:user_mobile/features/blind_mode/screens/accessible_camera_screen.dart';
 
 class BlindDashboardScreen extends StatefulWidget {
   const BlindDashboardScreen({super.key});
@@ -203,8 +206,31 @@ class _BlindDashboardScreenState extends State<BlindDashboardScreen> {
       case "obstacle":
         _showDummyAction("🚧 Opening Obstacle Detection...");
         break;
-      case "read_text":
-        _showDummyAction("📄 Opening Document Scanner...");
+     case "read_text":
+        // 1. Open our custom full-screen camera and pass the OCR instructions!
+        final XFile? image = await Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => const AccessibleCameraScreen(
+              instructionText: "Document scanner ready. Point your phone at the text and tap anywhere on the screen to capture.",
+            ),
+          ),
+        );
+        
+        // 2. If they took a picture, send it to Python!
+        if (image != null) {
+          await _voiceService.speak("Processing image. Please wait.");
+          
+          final String? extractedText = await VisionApiService().readTextFromImage(image.path);
+          
+          if (extractedText != null && extractedText.isNotEmpty && extractedText != "No text detected") {
+            await _voiceService.speak("Here is what I read: $extractedText");
+          } else {
+            await _voiceService.speak("I couldn't detect any readable text. Please ensure the area is well lit and try again.");
+          }
+        } else {
+          await _voiceService.speak("Scan cancelled.");
+        }
         break;
       case "current_location":
         _showDummyAction("📍 Finding Current Location...");
@@ -213,7 +239,6 @@ class _BlindDashboardScreenState extends State<BlindDashboardScreen> {
           Position position = await Geolocator.getCurrentPosition(
             desiredAccuracy: LocationAccuracy.high,
           );
-
           // 2. Translate the coordinates into a human-readable street name
           List<Placemark> placemarks = await placemarkFromCoordinates(
             position.latitude,
