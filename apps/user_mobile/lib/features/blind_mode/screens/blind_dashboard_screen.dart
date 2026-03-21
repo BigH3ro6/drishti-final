@@ -15,6 +15,7 @@ import 'package:user_mobile/core/services/pairing_api_service.dart';
 import 'package:user_mobile/core/services/live_location_service.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:geocoding/geocoding.dart';
+import 'package:user_mobile/core/services/system_telemetry_service.dart';
 
 class BlindDashboardScreen extends StatefulWidget {
   const BlindDashboardScreen({super.key});
@@ -27,6 +28,7 @@ class _BlindDashboardScreenState extends State<BlindDashboardScreen> {
   late VoiceAssistantService _voiceService;
   bool _isListeningUI = false;
   final LiveLocationService _locationService = LiveLocationService();
+  final SystemTelemetryService _telemetryService = SystemTelemetryService();
   bool _isSelectingCaregiver = false;
 
   final PairingApiService _pairingApi = PairingApiService();
@@ -36,6 +38,7 @@ class _BlindDashboardScreenState extends State<BlindDashboardScreen> {
   void initState() {
     super.initState();
     _locationService.startTracking();
+    _telemetryService.startTelemetry();
     _voiceService = VoiceAssistantService(
       onCommandRecognized: _handleVoiceCommand,
       onListeningStateChanged: (bool isListening) {
@@ -79,6 +82,7 @@ class _BlindDashboardScreenState extends State<BlindDashboardScreen> {
   @override
   void dispose() {
     _locationService.stopTracking();
+    _telemetryService.stopTelemetry();
     super.dispose();
   }
 

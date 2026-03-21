@@ -60,7 +60,7 @@ class _MapTrackingScreenState extends State<MapTrackingScreen> with SingleTicker
     Set<Marker> newMarkers = {};
 
     for (var user in linkedUsers) {
-      final locationData = await _apiService.getUserLocation(user['uid']);
+      final locationData = await _apiService.getUserLocation(user['id']);
       
       if (locationData != null) {
         double lat = locationData['latitude'];
@@ -102,11 +102,12 @@ class _MapTrackingScreenState extends State<MapTrackingScreen> with SingleTicker
           "dist": "Live",
           "lat": lat,
           "lng": lng,
+          "profileImageUrl": user['profile_image_url'],
         });
 
         newMarkers.add(
           Marker(
-            markerId: MarkerId(user['uid']),
+            markerId: MarkerId(user['id']),
             position: LatLng(lat, lng),
             zIndexInt: 2,
             infoWindow: InfoWindow(
@@ -397,8 +398,14 @@ Widget _buildDraggableBottomSheet() {
                   children: [
                     Stack(
                       children: [
-                        CircleAvatar(radius: 35, backgroundColor: AppColors.primaryDark, child: Text(user["name"][0], style: GoogleFonts.poppins(color: Colors.white, fontSize: 24))),
-                        Positioned(bottom: 0, right: 0, child: Container(padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2), decoration: BoxDecoration(color: Colors.green, borderRadius: BorderRadius.circular(10), border: Border.all(color: Colors.white, width: 2)), child: const Icon(Icons.battery_charging_full, size: 10, color: Colors.white)))
+                       CircleAvatar(
+                          radius: 35, 
+                          backgroundColor: AppColors.primaryDark, 
+                          backgroundImage: user["profileImageUrl"] != null ? NetworkImage(user["profileImageUrl"]) : null,
+                          child: user["profileImageUrl"] == null 
+                            ? Text(user["name"][0].toUpperCase(), style: GoogleFonts.poppins(color: Colors.white, fontSize: 24))
+                            : null,
+                        ),
                       ],
                     ),
                     const SizedBox(width: 15),
