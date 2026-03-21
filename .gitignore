@@ -21,13 +21,52 @@ firmware/esp32-cam/.pio/
 firmware/esp32-cam/.vscode/
 
 # Machine Learning
-ml/datasets/
+*.zip
+ml_pipeline_Obstacle_det/dataset/
+
 # Visual Studio / VS Code Junk
 .vs/
 .vscode/
 *.slnx
 *.sqlite
 CMakeWorkspaceSettings.json
+
+**/augmented_data/
+**/preprocessed_data/
+drishti_final_dataset/
+
+# YOLOv11 Training Outputs
+**/runs/
+**/*.pt
+**/Drishti_Training/
+
+
+# Ignore the specific split and augmented folders
+**/drishti_final_split/
+
+
+
+# Ignore local datasets
+ml_pipeline_Obstacle_det/dataset/
+ml_pipeline_Obstacle_det/drishti_final_dataset/
+
+# Ignore the virtual environment (to keep repo small)
+drishti_env/
+
+# Ignore raw test videos
+vedios/
+
+# Ignore generated detection outputs
+output_videos/
+
+# Ignore raw test data
+drishti-final/test_images/
+drishti-final/detection_results/
+drishti-final/output_lives/
+
+# Ignore local python environment and cache
+__pycache__/
+.ipynb_checkpoints/
 VSWorkspaceState.json
 
 *.json

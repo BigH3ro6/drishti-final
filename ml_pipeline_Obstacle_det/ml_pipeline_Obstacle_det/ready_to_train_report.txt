@@ -1,0 +1,11 @@
+DRISHTI FINAL BALANCED DATASET (READY FOR TRAINING)
+--------------------------------------------------
+Target: Minimum 388 instances per class
+
+motorcycle: 963
+person: 923
+plant pot: 683
+pole: 548
+pothole: 419
+tree: 533
+zebra cross: 598

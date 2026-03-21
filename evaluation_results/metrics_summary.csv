@@ -1,0 +1,25 @@
+Metric,Value
+mAP@50,0.9574
+mAP@50-95,0.6946
+Precision,0.9418
+Recall,0.919
+Accuracy,0.8123
+F1 Score (Weighted),0.811
+Kappa Score,0.7805
+MCC Score,0.7818
+CV Mean Accuracy,0.9752
+CV Mean F1,0.9035
+ROC-AUC (motorcycle),0.9945
+Best F1 (motorcycle),0.9091
+ROC-AUC (person),0.9879
+Best F1 (person),0.96
+ROC-AUC (plant pot),1.0
+Best F1 (plant pot),0.9961
+ROC-AUC (pole),0.9868
+Best F1 (pole),0.9497
+ROC-AUC (pothole),0.9971
+Best F1 (pothole),0.9901
+ROC-AUC (tree),0.999
+Best F1 (tree),0.9822
+ROC-AUC (zebra cross),0.9997
+Best F1 (zebra cross),0.9933

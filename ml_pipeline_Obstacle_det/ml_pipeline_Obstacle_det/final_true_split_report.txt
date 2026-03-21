@@ -1,0 +1,9 @@
+FINAL DATASET SPLIT (BASE + AUGMENTED)
+--------------------------------------------------
+Original Preprocessed Base: 2394 images
+Newly Augmented Images:     1316 images
+Training Set:   3710 images (78.3%)
+Validation Set (Untouched): 685 images (14.5%)
+Testing Set (Untouched):    342 images (7.2%)
+--------------------------------------------------
+Total Images in Pipeline:   4737
