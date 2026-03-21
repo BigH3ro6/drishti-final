@@ -173,7 +173,7 @@ Future<void> _startWakeWordListening() async {
       onCommandRecognized("play_messages", text);
       
     } else if (text.contains("message") || text.contains("voice note") || text.contains("send")) {
-      await speak("Ready to send a voice to your caregiver."); // --- ADDED AWAIT ---
+      await speak("Ready to send a voice to your caregiver.");
       onCommandRecognized("message_caregiver",text);
       
     } else if (text.contains("sos") || text.contains("help") || text.contains("emergency")) {
@@ -188,6 +188,10 @@ Future<void> _startWakeWordListening() async {
       await speak("Opening document scanner.");
       onCommandRecognized("read_text",text);
       
+    } else if (text.contains("describe") || text.contains("scene") || text.contains("surroundings") || text.contains("around me")) {
+      await speak("Opening scene describer.");
+      onCommandRecognized("describe", text);
+
     } else if (text.contains("where am i") || text.contains("current location")) {
       await speak("Fetching your current location.");
       onCommandRecognized("current_location",text);

@@ -124,8 +124,10 @@ def detect_obstacles():
             return jsonify({"error": "Empty image file"}), 400
 
         # Step B: The Traffic Cop - Forward the exact image to the ML Server
-        # NOTE: placeholder link.
-        YOLO_ENDPOINT = "https://placeholder-drishti-ml.com/predict"
+        YOLO_ENDPOINT = os.getenv("OBSTACLE_PREDICT_IMAGE_URL")
+        
+        if not YOLO_ENDPOINT:
+            return jsonify({"error": "Server misconfiguration: Missing OBSTACLE_PREDICT_IMAGE_URL"}), 500
         
         # Package the raw image up exactly how Flutter sent it
         files = {'image': (file.filename, file.read(), file.content_type)}
