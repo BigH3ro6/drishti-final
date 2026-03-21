@@ -17,6 +17,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:user_mobile/core/services/system_telemetry_service.dart';
 import 'package:user_mobile/core/services/safety_api_service.dart';
+import 'package:flutter_phone_direct_caller/flutter_phone_direct_caller.dart';
 
 class BlindDashboardScreen extends StatefulWidget {
   const BlindDashboardScreen({super.key});
@@ -31,6 +32,7 @@ class _BlindDashboardScreenState extends State<BlindDashboardScreen> {
   final LiveLocationService _locationService = LiveLocationService();
   final SystemTelemetryService _telemetryService = SystemTelemetryService();
   bool _isSelectingCaregiver = false;
+  String _pendingCaregiverAction = "";
 
   final PairingApiService _pairingApi = PairingApiService();
   List<Map<String, dynamic>> _caregivers = [];
@@ -86,6 +88,22 @@ class _BlindDashboardScreenState extends State<BlindDashboardScreen> {
     _telemetryService.stopTelemetry();
     super.dispose();
   }
+  Future<void> _makePhoneCall(String? phoneNumber, String caregiverName) async {
+    if (phoneNumber == null || phoneNumber.isEmpty) {
+      await _voiceService.speak("Sorry, I don't have a phone number saved for $caregiverName.");
+      return;
+    }
+    
+    await _voiceService.speak("Calling $caregiverName.");
+    
+    // 1. Trigger the direct phone call!
+    bool? didCall = await FlutterPhoneDirectCaller.callNumber(phoneNumber);
+    
+    // 2. Handle failures (e.g., if the user denied the phone permission)
+    if (didCall == null || !didCall) {
+      await _voiceService.speak("I was unable to place the call. Please ensure phone permissions are granted in your settings.");
+    }
+  }
 
   // Maps recognized voice commands to specific app features
   void _handleVoiceCommand(String command, String rawText) async {
@@ -101,7 +119,24 @@ class _BlindDashboardScreenState extends State<BlindDashboardScreen> {
 
     switch (command) {
       case "call_caregiver":
-        _showDummyAction("📞 Calling Caregiver...");
+        if (_caregivers.isEmpty) {
+          await _voiceService.speak("You don't have any caregivers paired yet.");
+        } else if (_caregivers.length == 1) {
+          final singleCaregiver = _caregivers[0];
+          await _makePhoneCall(singleCaregiver['phone'], singleCaregiver['name'] ?? "Caregiver");
+        } else {
+          _isSelectingCaregiver = true;
+          _pendingCaregiverAction = "call"; 
+          List<String> caregiverNames = _caregivers
+              .map((c) => c["name"]?.toString() ?? "Caregiver")
+              .toList();
+          String namesToSpeak = caregiverNames.join(", or ");
+
+          await _voiceService.speak(
+            "Which caregiver do you want to call? Say the name. $namesToSpeak.",
+          );
+          await _voiceService.triggerManualListen();
+        }
         break;
       case "currency":
         _showDummyAction("💵 Opening Currency Scanner...");
@@ -162,6 +197,7 @@ class _BlindDashboardScreenState extends State<BlindDashboardScreen> {
           }
         } else {
           _isSelectingCaregiver = true;
+          _pendingCaregiverAction = "message";
           List<String> caregiverNames = _caregivers
               .map((c) => c["name"]?.toString() ?? "Caregiver")
               .toList();
@@ -346,20 +382,27 @@ class _BlindDashboardScreenState extends State<BlindDashboardScreen> {
     }
 
     if (selectedCaregiver != null) {
-      // Launch the recording screen with the dynamic IDs!
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => BlindVoiceRecordScreen(
-            targetChatId: selectedCaregiver!["chatId"]!,
-            targetCaregiverId: selectedCaregiver["id"]!,
-            caregiverName: selectedCaregiver["name"]!, 
+      if (_pendingCaregiverAction == "call") {
+        // ACTION: Trigger the phone dialer!
+        await _makePhoneCall(selectedCaregiver["phone"], selectedCaregiver["name"] ?? "Caregiver");
+      } else {
+        // ACTION: Default to voice message screen!
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => BlindVoiceRecordScreen(
+              targetChatId: selectedCaregiver!["chatId"]!,
+              targetCaregiverId: selectedCaregiver["id"]!,
+              caregiverName: selectedCaregiver["name"]!, 
+            ),
           ),
-        ),
-      );
+        );
+      }
     } else {
       await _voiceService.speak("I didn't recognize that caregiver. Selection cancelled.");
     }
+    // Reset the pending action so it's clean for next time
+    _pendingCaregiverAction = "";
   }
   // Temporary helper for testing command routing
   void _showDummyAction(String message) {

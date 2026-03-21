@@ -152,7 +152,7 @@ Future<void> _startWakeWordListening() async {
   Future<void> _processCommand(String text) async {
     debugPrint("User said: $text");
     
-    if (text.contains("call") && (text.contains("caretaker") || text.contains("caregiver") || text.contains("doctor"))) {
+    if (text.contains("call")) {
       await speak("Calling your caregiver."); // --- ADDED AWAIT ---
       onCommandRecognized("call_caregiver",text);
       
