@@ -50,4 +50,7 @@ def create_app():
     
     from .routes.location_routes import location_bp
     app.register_blueprint(location_bp)
+    
+    from .routes.safety_routes import safety_bp
+    app.register_blueprint(safety_bp)
     return app

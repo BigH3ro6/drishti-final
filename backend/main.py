@@ -1,5 +1,5 @@
 from flask import Flask
-from app.routes.safety_routes import safety_bp
+from backend.flask_service.app.routes.safety_routes import safety_bp
 from app.routes.vision_routes import vision_bp
 import firebase_admin
 from firebase_admin import credentials, firestore

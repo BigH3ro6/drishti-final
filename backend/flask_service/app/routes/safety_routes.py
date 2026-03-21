@@ -4,7 +4,7 @@ from firebase_admin import firestore, messaging
 
 safety_bp = Blueprint('safety', __name__)
 
-@safety_bp.route('/sos', methods=['POST'])
+@safety_bp.route('/api/safety/sos', methods=['POST'])
 def trigger_sos():
     try:
         data = request.get_json()
@@ -25,7 +25,7 @@ def trigger_sos():
             "user_id": user_id,
             "latitude": data['latitude'],
             "longitude": data['longitude'],
-            "timestamp": datetime.now(),
+            "timestamp": firestore.SERVER_TIMESTAMP,
             "resolved": False
         }
         db.collection('incidents').add(incident_data)
@@ -54,7 +54,7 @@ def trigger_sos():
     
 
     
-@safety_bp.route('/location', methods=['POST'])
+@safety_bp.route('/api/location', methods=['POST'])
 def update_location():
     try:
         data = request.get_json()
@@ -70,7 +70,7 @@ def update_location():
         location_data = {
             "latitude": data['latitude'],
             "longitude": data['longitude'],
-            "last_updated": datetime.now()
+            "last_updated": firestore.SERVER_TIMESTAMP
         }
         
         # 3. Save to 'tracking' collection (Overwriting the previous location)
