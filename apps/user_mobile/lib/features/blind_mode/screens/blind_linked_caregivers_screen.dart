@@ -200,7 +200,7 @@ class _BlindLinkedCaregiversScreenState extends State<BlindLinkedCaregiversScree
                     SnackBar(content: Text("Removing $name..."), duration: const Duration(seconds: 1)),
                   );
 
-                  String targetUid = user['uid'];
+                  String targetUid = user['id'];
                   bool success = await _pairingService.unlinkUser(targetUid);
 
                   if (success && mounted) {
@@ -208,7 +208,7 @@ class _BlindLinkedCaregiversScreenState extends State<BlindLinkedCaregiversScree
                       const SnackBar(content: Text("Caregiver removed successfully."), backgroundColor: Colors.green),
                     );
                     setState(() {
-                      _caregivers.removeWhere((u) => u['uid'] == targetUid);
+                      _caregivers.removeWhere((u) => u['id'] == targetUid);
                     });
                   } else if (mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(

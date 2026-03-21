@@ -55,6 +55,8 @@ dependencies:
   geocoding: ^4.0.0
   record: ^6.2.0
   audioplayers: ^6.6.0
+  image_picker: ^1.2.1
+  intl_phone_field: ^3.2.0
 
 dev_dependencies:
   flutter_test:
