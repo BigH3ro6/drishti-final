@@ -16,6 +16,7 @@ import 'package:user_mobile/core/services/live_location_service.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:user_mobile/core/services/system_telemetry_service.dart';
+import 'package:user_mobile/core/services/safety_api_service.dart';
 
 class BlindDashboardScreen extends StatefulWidget {
   const BlindDashboardScreen({super.key});
@@ -174,7 +175,30 @@ class _BlindDashboardScreenState extends State<BlindDashboardScreen> {
         break;
       case "sos":
         _showDummyAction("🚨 ACTIVATING SOS!");
-        // TODO: Navigate to SOS countdown screen
+        
+        try {
+          // Grab the live emergency GPS coordinates
+          Position position = await Geolocator.getCurrentPosition(
+            desiredAccuracy: LocationAccuracy.high,
+          );
+          
+          // Hit the Python backend!
+          bool success = await SafetyApiService().triggerSOS(position.latitude, position.longitude);
+          
+          if (success) {
+            // Speak ONLY ONCE when the alert is successfully sent
+            await _voiceService.speak("S O S activated. Your caregivers have been alerted.");
+          } else {
+            await _voiceService.speak("Failed to send alert to the server. Please call for help immediately.");
+          }
+        } catch (e) {
+          debugPrint("SOS Location Error: $e");
+          // Fallback: Send with 0.0, 0.0 if GPS fails so the Caregiver still gets the alarm!
+          bool success = await SafetyApiService().triggerSOS(0.0, 0.0);
+          if (success) {
+             await _voiceService.speak("S O S activated without location. Caregivers alerted.");
+          }
+        }
         break;
       case "obstacle":
         _showDummyAction("🚧 Opening Obstacle Detection...");
