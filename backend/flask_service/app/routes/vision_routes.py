@@ -12,7 +12,6 @@ pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tessera
 # Initialize Blueprint
 vision_bp = Blueprint('vision', __name__)
 
-CURRENCY_API_URL = "https://dulasha-drishti-currency-detection.hf.space"
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg'}
 
 
@@ -73,9 +72,16 @@ def detect_currency():
         return jsonify({"error": "Only JPG, JPEG, PNG files are allowed"}), 400
     
     try:
+        # 1. Pull the URL securely from the .env file
+        currency_endpoint = os.getenv("CURRENCY_API_URL")
+        
+        # 2. Add a failsafe just in case the .env variable is missing
+        if not currency_endpoint:
+             return jsonify({"error": "Server misconfiguration: Missing CURRENCY_API_URL"}), 500
+
         files = {'image': (file.filename, file.read(), file.content_type)}
         response = requests.post(
-            f"{CURRENCY_API_URL}/predict",
+            f"{currency_endpoint}/predict", 
             files=files,
             timeout=30
         )

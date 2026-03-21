@@ -99,4 +99,37 @@ class VisionApiService {
       return null;
     }
   }
+  Future<String?> recognizeCurrency(String imagePath) async {
+    try {
+      // 1. Create a Multipart Request
+      var request = http.MultipartRequest(
+        'POST',
+        Uri.parse('${ApiConstants.baseUrl}/api/vision/detect-currency'),
+      );
+
+      // 2. Attach the raw image file
+      request.files.add(await http.MultipartFile.fromPath('image', imagePath));
+
+      // 3. Send it to your Flask Backend
+      var streamedResponse = await request.send();
+      var response = await http.Response.fromStream(streamedResponse);
+
+      if (response.statusCode == 200) {
+        final jsonResponse = jsonDecode(response.body);
+        
+        // 4. Parse the ML developer's JSON format
+        if (jsonResponse['success'] == true) {
+           return jsonResponse['currency'];
+        } else {
+           return "I couldn't recognize the currency.";
+        }
+      } else {
+        debugPrint("❌ Currency Detection Error: ${response.statusCode} - ${response.body}");
+        return null;
+      }
+    } catch (e) {
+      debugPrint("❌ Currency Detection Exception: $e");
+      return null;
+    }
+  }
 }

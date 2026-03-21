@@ -155,7 +155,30 @@ class _BlindDashboardScreenState extends State<BlindDashboardScreen> {
         }
         break;
       case "currency":
-        _showDummyAction("💵 Opening Currency Scanner...");
+        // 1. Open the accessible full-screen camera
+        final XFile? image = await Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => const AccessibleCameraScreen(
+              instructionText: "Currency scanner ready. Hold the note in front of the camera and tap anywhere to capture.",
+            ),
+          ),
+        );
+        
+        // 2. Process the image through the API
+        if (image != null) {
+          await _voiceService.speak("Analyzing currency. Please wait.");
+          
+          final String? result = await VisionApiService().recognizeCurrency(image.path);
+          
+          if (result != null && result.isNotEmpty) {
+            await _voiceService.speak(result);
+          } else {
+            await _voiceService.speak("I couldn't analyze the note. Please ensure it is well lit and try again.");
+          }
+        } else {
+          await _voiceService.speak("Scan cancelled.");
+        }
         break;
       case "navigate":
         _showDummyAction("🗺️ Opening GPS Navigation...");
