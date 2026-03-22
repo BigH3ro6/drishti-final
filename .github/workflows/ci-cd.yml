@@ -107,6 +107,11 @@ jobs:
               # --- 3. NAVIGATE TO BACKEND AND PREPARE DOCKER ---
               cd ${{ env.DEPLOY_DIR }}/backend/flask_service
 
+              echo 'Creating credentials...'
+              echo '${{ secrets.GCP_SERVICE_ACCOUNT_JSON }}' > serviceAccount.json
+              echo 'GOOGLE_APPLICATION_CREDENTIALS=/app/serviceAccount.json' > .env
+              echo 'PYTHONUNBUFFERED=1' >> .env
+
 
               # --- 4. BUILD AND RUN DOCKER COMPOSE ---
               echo '🐳 Building and starting services with docker-compose...'
