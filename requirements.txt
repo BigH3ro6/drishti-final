@@ -1,0 +1,11 @@
+ultralytics
+opencv-python
+matplotlib
+pyttsx3
+pywin32
+pythoncom
+pandas
+scikit-learn
+keyboard
+ipython
+moviepy

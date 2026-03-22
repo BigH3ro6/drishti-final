@@ -6,6 +6,7 @@ backend/flask_service/venv/
 backend/flask_service/__pycache__/
 backend/flask_service/*.pyc
 backend/flask_service/.env
+backend/flask_service/certs/serviceAccountKey
 
 # Flutter
 apps/user_mobile/.dart_tool/
@@ -21,6 +22,8 @@ firmware/esp32-cam/.vscode/
 
 # Machine Learning
 ml/datasets/
+*.zip
+ml_pipeline_Obstacle_det/dataset/
 
 # Visual Studio / VS Code Junk
 .vs/
@@ -46,3 +49,62 @@ vision/currency_detection/models/*.pt
 # Python cache
 __pycache__/
 *.pyc
+
+**/augmented_data/
+**/preprocessed_data/
+drishti_final_dataset/
+
+# YOLOv11 Training Outputs
+**/runs/
+**/*.pt
+**/Drishti_Training/
+
+
+# Ignore the specific split and augmented folders
+**/drishti_final_split/
+
+
+
+# Ignore local datasets
+ml_pipeline_Obstacle_det/dataset/
+ml_pipeline_Obstacle_det/drishti_final_dataset/
+
+# Ignore the virtual environment (to keep repo small)
+drishti_env/
+
+# Ignore raw test videos
+vedios/
+
+# Ignore generated detection outputs
+output_videos/
+
+# Ignore raw test data
+drishti-final/test_images/
+drishti-final/detection_results/
+drishti-final/output_lives/
+
+# Ignore local python environment and cache
+__pycache__/
+.ipynb_checkpoints/
+VSWorkspaceState.json
+
+*.json
+# Environments
+venv/
+env/
+.env
+
+# Python Cache
+__pycache__/
+*.pyc
+*.pyo
+
+# Secret Keys and Credentials
+*.pem
+*.key
+*secret*.json
+*admin*.json
+*credentials*.json
+firebase-adminsdk.json
+serviceAccountKey.json
+google-services.json
