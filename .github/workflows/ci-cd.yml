@@ -111,8 +111,8 @@ jobs:
               # --- 4. BUILD AND RUN DOCKER COMPOSE ---
               echo '🐳 Building and starting services with docker-compose...'
               export DOCKER_BUILDKIT=1
-              sudo docker-compose -f ${{ env.DEPLOY_DIR }}/backend/flask_service/docker-compose.yml pull
-              sudo docker-compose -f ${{ env.DEPLOY_DIR }}/backend/flask_service/docker-compose.yml up -d --build --remove-orphans
+              sudo docker compose -f ${{ env.DEPLOY_DIR }}/backend/flask_service/docker-compose.yml pull
+              sudo docker compose -f ${{ env.DEPLOY_DIR }}/backend/flask_service/docker-compose.yml up -d --build --remove-orphans
 
               # --- 5. CLEANUP ---
               echo '🧹 Cleaning up unused Docker images...'
@@ -121,7 +121,7 @@ jobs:
               # --- 6. VERIFY DEPLOYMENT ---
               echo '✅ Waiting for Flask service to be ready...'
               sleep 5
-              sudo docker-compose ps
+              sudo docker compose ps
 
               echo '✅ Deployment completed successfully!'
             "
