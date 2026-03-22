@@ -1,7 +1,5 @@
 services:
   backend:
-    env_file:
-      - .env
     build: .
     ports:
       - "5000:5000"
@@ -10,4 +8,5 @@ services:
     environment:
       - FLASK_ENV=development
       - PYTHONUNBUFFERED=1
+      - GOOGLE_APPLICATION_CREDENTIALS=serviceAccountKey.json
       
