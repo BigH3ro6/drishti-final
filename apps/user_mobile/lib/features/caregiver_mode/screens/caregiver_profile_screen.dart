@@ -11,6 +11,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:user_mobile/features/auth/screens/role_selection_screen.dart';
 import 'package:user_mobile/shared/glass_container.dart';
 import 'package:user_mobile/features/caregiver_mode/screens/membership_screen.dart';
+import 'package:user_mobile/core/services/profile_api_service.dart';
+import 'package:image_picker/image_picker.dart';
 
 class CaregiverProfileScreen extends StatefulWidget {
   const CaregiverProfileScreen({super.key});
@@ -20,6 +22,57 @@ class CaregiverProfileScreen extends StatefulWidget {
 }
 
 class _CaregiverProfileScreenState extends State<CaregiverProfileScreen> {
+  final ProfileApiService _profileApi = ProfileApiService();
+  String _userName = "Loading...";
+  String? _profileImageUrl;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadProfile();
+  }
+
+  Future<void> _loadProfile() async {
+    final data = await _profileApi.getUserProfile();
+    if (mounted && data != null) {
+      setState(() {
+        _userName = data['name'] ?? "Caregiver";
+        _profileImageUrl = data['profile_image_url'];
+      });
+    }
+  }
+ Future<void> _pickAndUploadImage() async {
+    final ImagePicker picker = ImagePicker();
+    final XFile? image = await picker.pickImage(source: ImageSource.gallery, imageQuality: 50);
+    
+    // 1. Kill the blue squiggly warning with an early return!
+    if (!mounted) return; 
+
+    if (image != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Uploading profile picture..."))
+      );
+      
+      final String? newUrl = await _profileApi.uploadProfileImage(image.path);
+      
+      // 2. Another check after the second 'await'
+      if (!mounted) return; 
+
+      if (newUrl != null) {
+        setState(() {
+          _profileImageUrl = newUrl;
+        });
+        
+        // 3. The bracket fix! backgroundColor is now a property of SnackBar
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("Profile picture updated!"), 
+            backgroundColor: Colors.green, 
+          ),
+        );
+      }
+    }
+  }
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -89,7 +142,6 @@ class _CaregiverProfileScreenState extends State<CaregiverProfileScreen> {
                       _buildSettingsTile(
                         Icons.group_outlined, 
                         "Linked Users", 
-                        badgeCount: "3",
                         onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const LinkedUsersScreen())),
                       ),
                       _buildDivider(),
@@ -222,50 +274,46 @@ class _CaregiverProfileScreenState extends State<CaregiverProfileScreen> {
   Widget _buildProfileHeader() {
     return Column(
       children: [
-        Stack(
-          alignment: Alignment.bottomRight,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(4),
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                border: Border.all(color: Colors.white54, width: 2),
+        GestureDetector(
+          onTap: _pickAndUploadImage, // Tap to upload!
+          child: Stack(
+            alignment: Alignment.bottomRight,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(4),
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(color: Colors.white54, width: 2),
+                ),
+                child: CircleAvatar(
+                  radius: 50,
+                  backgroundColor: Colors.white24,
+                  // Show the real image if it exists!
+                  backgroundImage: _profileImageUrl != null ? NetworkImage(_profileImageUrl!) : null, 
+                  child: _profileImageUrl == null 
+                      ? Text(
+                          _userName == "Loading..." ? "?" : _userName[0].toUpperCase(),
+                          style: GoogleFonts.poppins(fontSize: 40, color: Colors.white, fontWeight: FontWeight.bold)
+                        )
+                      : null,
+                ),
               ),
-              child: const CircleAvatar(
-                radius: 50,
-                backgroundColor: Colors.white24,
-                // Replace with NetworkImage when connected to Firebase
-                backgroundImage: null, 
-                child: Icon(Icons.person, size: 50, color: Colors.white),
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: const BoxDecoration(color: AppColors.primaryLight, shape: BoxShape.circle),
+                child: const Icon(Icons.camera_alt, color: Colors.white, size: 20),
               ),
-            ),
-            // Edit Profile Picture Button
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: const BoxDecoration(
-                color: AppColors.purpleLight,
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(Icons.camera_alt, color: Colors.white, size: 20),
-            ),
-          ],
+            ],
+          ),
         ),
         const SizedBox(height: 15),
         Text(
-          "Savindu De Silva",
-          style: GoogleFonts.poppins(
-            fontSize: 24,
-            fontWeight: FontWeight.bold,
-            color: Colors.white,
-          ),
+          _userName,
+          style: GoogleFonts.poppins(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white),
         ),
         Text(
           "Primary Caregiver",
-          style: GoogleFonts.poppins(
-            fontSize: 14,
-            color: Colors.greenAccent,
-            fontWeight: FontWeight.w500,
-          ),
+          style: GoogleFonts.poppins(fontSize: 14, color: Colors.greenAccent, fontWeight: FontWeight.w500),
         ),
       ],
     );
@@ -296,7 +344,7 @@ class _CaregiverProfileScreenState extends State<CaregiverProfileScreen> {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               decoration: BoxDecoration(
-                color: AppColors.purpleLight,
+                color: AppColors.primaryLight,
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Text(

@@ -101,7 +101,7 @@ class _GlassesConnectionScreenState extends State<GlassesConnectionScreen> {
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.white,
-                      foregroundColor: AppColors.purpleDark,
+                      foregroundColor: AppColors.primaryDark,
                       minimumSize: const Size(double.infinity, 55),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
                     ),
@@ -128,7 +128,7 @@ class _GlassesConnectionScreenState extends State<GlassesConnectionScreen> {
             height: 200,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: AppColors.purpleLight.withOpacity(0.5),
+              color: AppColors.primaryLight.withOpacity(0.5),
               boxShadow: [
                 BoxShadow(
                   color: const Color(0xFFFACC15).withOpacity(0.6), // Glowing Yellow

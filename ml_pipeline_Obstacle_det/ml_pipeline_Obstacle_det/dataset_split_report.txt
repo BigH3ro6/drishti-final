@@ -1,0 +1,18 @@
+DRISHTI DATASET SPLIT DISTRIBUTION REPORT
+Generated on: 2026-03-07 11:59:37.692327
+---------------------------------------------
+Split: TRAIN
+ - Image Count: 2394
+ - Percentage: 69.98%
+
+Split: VALID
+ - Image Count: 685
+ - Percentage: 20.02%
+
+Split: TEST
+ - Image Count: 342
+ - Percentage: 10.00%
+
+---------------------------------------------
+TOTAL DATASET SIZE: 3421 images
+STATUS: Data split verified for YOLOv11 training.

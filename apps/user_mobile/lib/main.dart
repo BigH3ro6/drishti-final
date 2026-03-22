@@ -6,12 +6,14 @@ import 'package:user_mobile/features/blind_mode/screens/glasses_connection_scree
 import 'package:user_mobile/features/caregiver_mode/screens/caregiver_dashboard_screen.dart';
 import 'package:user_mobile/features/caregiver_mode/screens/caregiver_profile_screen.dart';
 import 'package:user_mobile/features/caregiver_mode/screens/caregiver_main_screen.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:user_mobile/features/auth/screens/auth_gate.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await dotenv.load(fileName: ".env");
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
   await GoogleSignIn.instance.initialize(

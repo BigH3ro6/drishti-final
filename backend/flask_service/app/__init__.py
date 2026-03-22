@@ -5,33 +5,52 @@ import firebase_admin
 from firebase_admin import credentials, firestore
 from dotenv import load_dotenv
 
-load_dotenv()
+env_path = os.path.join(os.path.dirname(__file__), '..', '.env')
+load_dotenv(env_path)
+print(f"DEBUG .env loaded from: {env_path}")
+print(f"DEBUG CLOUD_NAME: {os.getenv('CLOUDINARY_CLOUD_NAME')}")
 
 def create_app():
     app = Flask(__name__)
-    CORS(app)  # Allows Flutter to talk to this backend
+    CORS(app)
 
-    # Initialize Firebase Admin SDK
-    # This gives your backend "God Mode" (read/write anything)
     cred_path = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
     
     if not firebase_admin._apps:
         if cred_path:
             cred = credentials.Certificate(cred_path)
             firebase_admin.initialize_app(cred)
-            print("✅ Firebase Admin Initialized")
+            print("Firebase Admin Initialized")
         else:
-            print("❌ Error: GOOGLE_APPLICATION_CREDENTIALS not found in .env")
+            print("Error: GOOGLE_APPLICATION_CREDENTIALS not found in .env")
 
-    # Initialize Firestore DB Client
     app.db = firestore.client()
 
-    # Register Routes (Placeholder)
+    from .services.storage_service import init_storage
+    init_storage(app)
+
     @app.route('/')
     def index():
         return {"status": "Drishti Backend (Firebase) Online"}
-    # Register Blueprints
+    
     from .routes.main import main_bp
     app.register_blueprint(main_bp)
 
+    from .routes.utility_routes import utility_bp
+    app.register_blueprint(utility_bp)
+
+    from .routes.vision_routes import vision_bp
+    app.register_blueprint(vision_bp, url_prefix='/api/vision')
+    
+    from .routes.auth_routes import auth_bp
+    app.register_blueprint(auth_bp) 
+
+    from .routes.pairing_routes import pairing_bp
+    app.register_blueprint(pairing_bp)
+    
+    from .routes.location_routes import location_bp
+    app.register_blueprint(location_bp)
+    
+    from .routes.safety_routes import safety_bp
+    app.register_blueprint(safety_bp)
     return app

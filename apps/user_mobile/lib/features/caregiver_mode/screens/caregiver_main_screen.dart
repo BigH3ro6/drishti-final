@@ -34,7 +34,7 @@ class _CaregiverMainScreenState extends State<CaregiverMainScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       extendBody: true, // Lets the gradient flow under the nav bar
-      backgroundColor: AppColors.purpleDark,
+      backgroundColor: AppColors.primaryDark,
       // 1. The Body switches based on the current index
       body: IndexedStack(
         index: _currentIndex,

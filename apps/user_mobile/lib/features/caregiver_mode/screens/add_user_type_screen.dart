@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:user_mobile/core/app_colors.dart';
 import 'package:user_mobile/shared/glass_container.dart';
-import 'package:user_mobile/features/caregiver_mode/screens/add_user_email_screen.dart';
+import 'package:user_mobile/features/caregiver_mode/screens/enter_pairing_code_screen.dart';
 
 class AddUserTypeScreen extends StatelessWidget {
   const AddUserTypeScreen({super.key});
@@ -78,7 +78,7 @@ class AddUserTypeScreen extends StatelessWidget {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => AddUserEmailScreen(isGroup: isGroup),
+              builder: (context) => EnterPairingCodeScreen(isGroup: isGroup),
             ),
           );
         },

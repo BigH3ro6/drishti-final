@@ -1,0 +1,154 @@
+{
+  "info": {
+    "name": "Drishti API - Dev 3",
+    "description": "Voice Messaging (Cloudinary), Weather API & Vision OCR endpoints",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:5000",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Health Check",
+      "item": [
+        {
+          "name": "Root",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/",
+              "host": ["{{baseUrl}}"]
+            },
+            "description": "Check if backend is running"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Weather API",
+      "item": [
+        {
+          "name": "Get Weather",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/weather?lat=6.9271&lng=79.8612",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "weather"],
+              "query": [
+                {
+                  "key": "lat",
+                  "value": "6.9271"
+                },
+                {
+                  "key": "lng",
+                  "value": "79.8612"
+                }
+              ]
+            },
+            "description": "Get weather for current GPS coordinates. Returns TTS-friendly string."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Voice Messaging API (Cloudinary)",
+      "item": [
+        {
+          "name": "Upload Voice Message",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{baseUrl}}/api/voice/upload",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "voice", "upload"]
+            },
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "audio",
+                  "type": "file",
+                  "src": [],
+                  "description": "Audio file (mp3, wav, m4a)"
+                },
+                {
+                  "key": "sender_id",
+                  "value": "user_123",
+                  "type": "text",
+                  "description": "UID of the sender"
+                },
+                {
+                  "key": "receiver_id",
+                  "value": "caregiver_456",
+                  "type": "text",
+                  "description": "UID of the receiver"
+                },
+                {
+                  "key": "chat_id",
+                  "value": "chat_789",
+                  "type": "text",
+                  "description": "Chat session ID"
+                }
+              ]
+            },
+            "description": "Upload voice message to Cloudinary and save to Firestore"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Voice Messages",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/voice/messages?chat_id=chat_789",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "voice", "messages"],
+              "query": [
+                {
+                  "key": "chat_id",
+                  "value": "chat_789"
+                }
+              ]
+            },
+            "description": "Get all voice messages for a specific chat"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Vision API (OCR)",
+      "item": [
+        {
+          "name": "Read Text from Image",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{baseUrl}}/vision/read-text",
+              "host": ["{{baseUrl}}"],
+              "path": ["vision", "read-text"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"image\": \"<base64_string>\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Extract text from an image using Tesseract OCR. Send Base64 encoded image."
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}

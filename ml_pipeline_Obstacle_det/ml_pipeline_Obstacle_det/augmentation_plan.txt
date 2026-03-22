@@ -1,0 +1,13 @@
+DRISHTI AUGMENTATION PLAN (GAP ANALYSIS)
+----------------------------------------
+Global Target: 388 instances per class
+
+Class           | Current  | Need to Generate
+----------------------------------------
+motorcycle      | 257      | +131
+person          | 301      | +87
+plant pot       | 142      | +246
+pole            | 212      | +176
+pothole         | 255      | +133
+tree            | 191      | +197
+zebra cross     | 388      | +0

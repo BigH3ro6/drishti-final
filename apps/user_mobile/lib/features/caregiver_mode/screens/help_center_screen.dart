@@ -44,7 +44,7 @@ class HelpCenterScreen extends StatelessWidget {
                     const SizedBox(height: 15),
                     ElevatedButton(
                       onPressed: () {},
-                      style: ElevatedButton.styleFrom(backgroundColor: Colors.white, foregroundColor: AppColors.purpleDark),
+                      style: ElevatedButton.styleFrom(backgroundColor: Colors.white, foregroundColor: AppColors.primaryDark),
                       child: const Text("Contact Support"),
                     )
                   ],

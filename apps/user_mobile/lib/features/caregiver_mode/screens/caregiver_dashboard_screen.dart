@@ -5,6 +5,12 @@ import 'package:user_mobile/shared/glass_container.dart';
 import 'package:user_mobile/features/caregiver_mode/screens/map_tracking_screen.dart';
 import 'package:user_mobile/features/caregiver_mode/screens/voice_chat_list_screen.dart';
 import 'package:user_mobile/features/caregiver_mode/screens/emergency_alerts_screen.dart';
+import 'package:user_mobile/features/caregiver_mode/screens/caregiver_profile_screen.dart'; // <-- Added for navigation!
+
+// --- API IMPORTS ---
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:user_mobile/core/services/pairing_api_service.dart';
+import 'package:user_mobile/core/services/profile_api_service.dart';
 
 class CaregiverDashboardScreen extends StatefulWidget {
   const CaregiverDashboardScreen({super.key});
@@ -15,11 +21,40 @@ class CaregiverDashboardScreen extends StatefulWidget {
 }
 
 class _CaregiverDashboardScreenState extends State<CaregiverDashboardScreen> {
-  // Dummy data to simulate multiple connected users
-  final List<Map<String, dynamic>> _connectedUsers = [
-    {"name": "Kamal", "status": "Safe", "battery": "85%", "isOnline": true},
-    {"name": "Nimali", "status": "Moving", "battery": "42%", "isOnline": true},
-  ];
+  final PairingApiService _pairingApi = PairingApiService();
+  final ProfileApiService _profileApi = ProfileApiService();
+  
+  List<Map<String, dynamic>> _connectedUsers = [];
+  String _caregiverFirstName = "Loading...";
+  String? _profileImageUrl; // <-- Added to hold the image URL
+  bool _isLoadingUsers = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadDashboardData();
+  }
+
+  Future<void> _loadDashboardData() async {
+    // 1. Get Caregiver's own name and profile picture
+    final profileData = await _profileApi.getUserProfile();
+    if (profileData != null && mounted) {
+      setState(() {
+        String fullName = profileData['name'] ?? "Caregiver";
+        _caregiverFirstName = fullName.split(" ")[0]; 
+        _profileImageUrl = profileData['profile_image_url']; // <-- Grab the image!
+      });
+    }
+
+    // 2. Get the actual linked Visually Impaired users from Python
+    final users = await _pairingApi.getLinkedUsers();
+    if (mounted) {
+      setState(() {
+        _connectedUsers = users;
+        _isLoadingUsers = false;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -52,7 +87,7 @@ class _CaregiverDashboardScreenState extends State<CaregiverDashboardScreen> {
                             ),
                           ),
                           Text(
-                            "Savindu!",
+                            _caregiverFirstName,
                             style: GoogleFonts.poppins(
                               fontSize: 34,
                               fontWeight: FontWeight.bold,
@@ -61,15 +96,32 @@ class _CaregiverDashboardScreenState extends State<CaregiverDashboardScreen> {
                           ),
                         ],
                       ),
-                      Container(
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          border: Border.all(color: Colors.white54, width: 2),
-                        ),
-                        child: const CircleAvatar(
-                          radius: 24,
-                          backgroundColor: Colors.white24,
-                          child: Icon(Icons.person, color: Colors.white),
+                      // --- THE CLICKABLE AVATAR ---
+                      GestureDetector(
+                        onTap: () {
+                          // Navigate to the profile screen when tapped!
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (context) => const CaregiverProfileScreen()),
+                          );
+                        },
+                        child: Container(
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            border: Border.all(color: Colors.white54, width: 2),
+                          ),
+                          child: CircleAvatar(
+                            radius: 24,
+                            backgroundColor: Colors.white24,
+                            // Show the Cloudinary image if it exists, otherwise show the first letter
+                            backgroundImage: _profileImageUrl != null ? NetworkImage(_profileImageUrl!) : null,
+                            child: _profileImageUrl == null 
+                              ? Text(
+                                  _caregiverFirstName == "Loading..." ? "?" : _caregiverFirstName[0].toUpperCase(),
+                                  style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 20),
+                                )
+                              : null,
+                          ),
                         ),
                       ),
                     ],
@@ -92,27 +144,62 @@ class _CaregiverDashboardScreenState extends State<CaregiverDashboardScreen> {
                 ),
                 const SizedBox(height: 15),
 
-                // Horizontal ListView for Multiple Users
+                // Horizontal ListView for Multiple Users (Live Stream)
                 SizedBox(
-                  height: 110, // Fixed height for the horizontal cards
-                  child: ListView.builder(
-                    scrollDirection: Axis.horizontal,
-                    physics: const BouncingScrollPhysics(),
-                    padding: const EdgeInsets.symmetric(horizontal: 24.0),
-                    itemCount: _connectedUsers.length,
-                    itemBuilder: (context, index) {
-                      final user = _connectedUsers[index];
-                      return Padding(
-                        padding: const EdgeInsets.only(right: 15.0),
-                        child: _buildUserStatusCard(
-                          name: user["name"],
-                          status: user["status"],
-                          battery: user["battery"],
-                          isOnline: user["isOnline"],
+                  height: 110,
+                  child: _isLoadingUsers 
+                    ? const Center(child: CircularProgressIndicator(color: Colors.white))
+                    : _connectedUsers.isEmpty 
+                      ? Center(child: Text("No users linked yet.", style: GoogleFonts.poppins(color: Colors.white70)))
+                      : ListView.builder(
+                          scrollDirection: Axis.horizontal,
+                          physics: const BouncingScrollPhysics(),
+                          padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                          itemCount: _connectedUsers.length,
+                          itemBuilder: (context, index) {
+                            final user = _connectedUsers[index];
+                            final userId = user["id"]; 
+                            final fallbackName = user["name"] ?? "Unknown";
+
+                            return Padding(
+                              padding: const EdgeInsets.only(right: 15.0),
+                              child: StreamBuilder<DocumentSnapshot>(
+                                stream: FirebaseFirestore.instance.collection('users').doc(userId).snapshots(),
+                                builder: (context, snapshot) {
+                                  
+                                  String currentStatus = "Fetching...";
+                                  String currentBattery = "--%";
+                                  bool isOnline = false;
+                                  String? imageUrl;
+
+                                  if (snapshot.hasData && snapshot.data!.exists) {
+                                    final data = snapshot.data!.data() as Map<String, dynamic>?;
+                                    
+                                    if (data != null) {
+                                      currentStatus = data['status'] ?? "Safe";
+                                      if (data['battery_level'] != null) {
+                                        currentBattery = "${data['battery_level']}%";
+                                      } else {
+                                        currentBattery = "Unknown";
+                                      }
+                                      isOnline = data['is_online'] ?? true;
+                                      imageUrl = data['profile_image_url'];
+                                    }
+                                  }
+                                  imageUrl ??= user['profile_image_url'];
+
+                                  return _buildUserStatusCard(
+                                    name: fallbackName,
+                                    status: currentStatus, 
+                                    battery: currentBattery, 
+                                    isOnline: isOnline, 
+                                    profileImageUrl: imageUrl,
+                                  );
+                                },
+                              ),
+                            );
+                          },
                         ),
-                      );
-                    },
-                  ),
                 ),
 
                 const SizedBox(height: 30),
@@ -141,13 +228,7 @@ class _CaregiverDashboardScreenState extends State<CaregiverDashboardScreen> {
                         icon: Icons.map_outlined,
                         color: Colors.blueAccent,
                         onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => const MapTrackingScreen(),
-                            ),
-                          );
-                          debugPrint("Open Map");
+                          Navigator.push(context, MaterialPageRoute(builder: (context) => const MapTrackingScreen()));
                         },
                       ),
                       const SizedBox(height: 15),
@@ -157,13 +238,7 @@ class _CaregiverDashboardScreenState extends State<CaregiverDashboardScreen> {
                         icon: Icons.mic_none_outlined,
                         color: Colors.orangeAccent,
                         onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => const VoiceChatListScreen(),
-                            ),
-                          );
-                          debugPrint("Open Voice Chat");
+                          Navigator.push(context, MaterialPageRoute(builder: (context) => const VoiceChatListScreen()));
                         },
                       ),
                       const SizedBox(height: 15),
@@ -173,14 +248,7 @@ class _CaregiverDashboardScreenState extends State<CaregiverDashboardScreen> {
                         icon: Icons.warning_amber_rounded,
                         color: Colors.redAccent,
                         onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) =>
-                                  const EmergencyAlertsScreen(),
-                            ),
-                          );
-                          debugPrint("Open Alerts");
+                          Navigator.push(context, MaterialPageRoute(builder: (context) => const EmergencyAlertsScreen()));
                         },
                       ),
                     ],
@@ -196,39 +264,36 @@ class _CaregiverDashboardScreenState extends State<CaregiverDashboardScreen> {
     );
   }
 
-  // New Helper: The User Status Card
+  // Helper: The User Status Card
   Widget _buildUserStatusCard({
     required String name,
     required String status,
     required String battery,
     required bool isOnline,
+    String? profileImageUrl,
   }) {
-    // Dynamic color based on status
-    Color statusColor = status == "Safe"
-        ? Colors.greenAccent
-        : Colors.orangeAccent;
+    Color statusColor = status == "Safe" ? Colors.greenAccent : Colors.orangeAccent;
 
     return SizedBox(
-      width: 260, // Width of each individual card
+      width: 260, 
       child: GlassContainer(
         padding: 15,
         child: Row(
           children: [
-            // Profile Pic with Online Indicator
             Stack(
               children: [
                 CircleAvatar(
                   radius: 26,
                   backgroundColor: Colors.white.withOpacity(0.2),
-                  // We use the first letter of the name as a placeholder for the image
-                  child: Text(
-                    name[0],
-                    style: GoogleFonts.poppins(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
-                  ),
+                  // 1. Show the image if it exists!
+                  backgroundImage: profileImageUrl != null ? NetworkImage(profileImageUrl!) : null,
+                  // 2. Only show the text letter if there is NO image
+                  child: profileImageUrl == null 
+                      ? Text(
+                          name.isNotEmpty ? name[0].toUpperCase() : "?",
+                          style: GoogleFonts.poppins(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white),
+                        )
+                      : null,
                 ),
                 Positioned(
                   bottom: 0,
@@ -239,15 +304,13 @@ class _CaregiverDashboardScreenState extends State<CaregiverDashboardScreen> {
                     decoration: BoxDecoration(
                       color: isOnline ? Colors.greenAccent : Colors.grey,
                       shape: BoxShape.circle,
-                      border: Border.all(color: AppColors.purpleDark, width: 2),
+                      border: Border.all(color: AppColors.primaryDark, width: 2),
                     ),
                   ),
                 ),
               ],
             ),
             const SizedBox(width: 15),
-
-            // Text Details
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -255,29 +318,12 @@ class _CaregiverDashboardScreenState extends State<CaregiverDashboardScreen> {
                 children: [
                   Text(
                     name,
-                    style: GoogleFonts.poppins(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
+                    style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
-                  Text(
-                    "Status: $status",
-                    style: GoogleFonts.poppins(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                      color: statusColor,
-                    ),
-                  ),
-                  Text(
-                    "Battery: $battery",
-                    style: GoogleFonts.poppins(
-                      fontSize: 11,
-                      color: Colors.white70,
-                    ),
-                  ),
+                  Text("Status: $status", style: GoogleFonts.poppins(fontSize: 13, fontWeight: FontWeight.w600, color: statusColor)),
+                  Text("Battery: $battery", style: GoogleFonts.poppins(fontSize: 11, color: Colors.white70)),
                 ],
               ),
             ),
@@ -287,7 +333,7 @@ class _CaregiverDashboardScreenState extends State<CaregiverDashboardScreen> {
     );
   }
 
-  // Helper Widget for the sleek Glass Cards
+  // Helper Widget for Action Cards
   Widget _buildFullWidthActionCard({
     required String title,
     required String subtitle,
@@ -301,48 +347,23 @@ class _CaregiverDashboardScreenState extends State<CaregiverDashboardScreen> {
         padding: 20,
         child: Row(
           children: [
-            // Icon Block
             Container(
               padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: color.withOpacity(0.2),
-                borderRadius: BorderRadius.circular(15),
-              ),
+              decoration: BoxDecoration(color: color.withOpacity(0.2), borderRadius: BorderRadius.circular(15)),
               child: Icon(icon, color: color, size: 32),
             ),
             const SizedBox(width: 20),
-
-            // Text Block
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    title,
-                    style: GoogleFonts.poppins(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.white,
-                    ),
-                  ),
+                  Text(title, style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.w600, color: Colors.white)),
                   const SizedBox(height: 4),
-                  Text(
-                    subtitle,
-                    style: GoogleFonts.poppins(
-                      fontSize: 12,
-                      color: Colors.white70,
-                    ),
-                  ),
+                  Text(subtitle, style: GoogleFonts.poppins(fontSize: 12, color: Colors.white70)),
                 ],
               ),
             ),
-
-            // Arrow indicator to show it's clickable
-            Icon(
-              Icons.arrow_forward_ios,
-              color: Colors.white.withOpacity(0.3),
-              size: 16,
-            ),
+            Icon(Icons.arrow_forward_ios, color: Colors.white.withOpacity(0.3), size: 16),
           ],
         ),
       ),

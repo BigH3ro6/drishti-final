@@ -9,9 +9,75 @@ import 'package:user_mobile/features/blind_mode/screens/accessibility_prefs_scre
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:user_mobile/features/auth/screens/role_selection_screen.dart';
 import 'package:user_mobile/shared/glass_container.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:user_mobile/core/services/profile_api_service.dart';
+import 'package:flutter_tts/flutter_tts.dart'; 
 
-class BlindProfileScreen extends StatelessWidget {
+class BlindProfileScreen extends StatefulWidget {
   const BlindProfileScreen({super.key});
+
+  @override
+  State<BlindProfileScreen> createState() => _BlindProfileScreenState();
+}
+
+class _BlindProfileScreenState extends State<BlindProfileScreen> {
+  final ProfileApiService _profileApi = ProfileApiService();
+  final FlutterTts _tts = FlutterTts();
+  String _userName = "Loading...";
+  String? _profileImageUrl;
+  
+  @override
+  void initState() {
+    super.initState();
+    _loadProfile();
+  }
+
+  Future<void> _loadProfile() async {
+    final data = await _profileApi.getUserProfile();
+    if (mounted && data != null) {
+      setState(() {
+        _userName = data['name'] ?? "User";
+        _profileImageUrl = data['profile_image_url']; // Fetch the existing image!
+      });
+    }
+  }
+
+  Future<void> _pickAndUploadImage() async {
+    final ImagePicker picker = ImagePicker();
+    final XFile? image = await picker.pickImage(source: ImageSource.gallery, imageQuality: 50);
+    
+    if (!mounted) return;
+
+    if (image != null) {
+      // 1. Spoken and visual feedback
+      _tts.speak("Uploading profile picture. Please wait.");
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Uploading profile picture..."))
+      );
+      
+      // 2. Send to Python -> Cloudinary -> Firestore
+      final String? newUrl = await _profileApi.uploadProfileImage(image.path);
+      
+      if (!mounted) return;
+
+      if (newUrl != null) {
+        setState(() {
+          _profileImageUrl = newUrl;
+        });
+        
+        // 3. Success feedback!
+        _tts.speak("Profile picture updated successfully.");
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("Profile picture updated!"), 
+            backgroundColor: Colors.green,
+          ),
+        );
+      } else {
+        _tts.speak("Failed to upload picture.");
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -32,14 +98,45 @@ class BlindProfileScreen extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 20),
             child: Column(
               children: [
-                // Avatar Area
-                const CircleAvatar(
-                  radius: 50,
-                  backgroundColor: Colors.white24,
-                  child: Icon(Icons.person, size: 50, color: Colors.white),
+                // Avatar Area with Upload Functionality
+                GestureDetector(
+                  onTap: _pickAndUploadImage,
+                  child: Semantics(
+                    label: "Double tap to upload a new profile picture",
+                    button: true,
+                    child: Stack(
+                      alignment: Alignment.bottomRight,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(4),
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            border: Border.all(color: Colors.white54, width: 2),
+                          ),
+                          child: CircleAvatar(
+                            radius: 50,
+                            backgroundColor: Colors.white24,
+                            backgroundImage: _profileImageUrl != null ? NetworkImage(_profileImageUrl!) : null,
+                            child: _profileImageUrl == null 
+                                ? Text(
+                                    _userName == "Loading..." ? "?" : _userName[0].toUpperCase(),
+                                    style: GoogleFonts.poppins(fontSize: 40, color: Colors.white, fontWeight: FontWeight.bold)
+                                  )
+                                : null,
+                          ),
+                        ),
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: const BoxDecoration(color: AppColors.primaryLight, shape: BoxShape.circle),
+                          child: const Icon(Icons.camera_alt, color: Colors.white, size: 20),
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
                 const SizedBox(height: 15),
-                Text("Kamal Perera", style: GoogleFonts.poppins(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white)),
+                // Dynamic User Name
+                Text(_userName, style: GoogleFonts.poppins(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white)),
                 Text("App Setup Mode", style: GoogleFonts.poppins(fontSize: 14, color: Colors.orangeAccent, fontWeight: FontWeight.w500)),
                 const SizedBox(height: 30),
 
@@ -49,19 +146,19 @@ class BlindProfileScreen extends StatelessWidget {
                   child: Column(
                     children: [
                       _buildSettingsTile(Icons.person_outline, "Personal Information",
-                        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const BlindPersonalInfoScreen())),
+                        onTap: () async => Navigator.push(context, MaterialPageRoute(builder: (context) => const BlindPersonalInfoScreen())),
                       ),
                       _buildDivider(),
-                      _buildSettingsTile(Icons.link, "Linked Caregivers", badgeCount: "2",
-                        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const BlindLinkedCaregiversScreen())),
+                      _buildSettingsTile(Icons.link, "Linked Caregivers",
+                        onTap: () async => Navigator.push(context, MaterialPageRoute(builder: (context) => const BlindLinkedCaregiversScreen())),
                       ),
                       _buildDivider(),
                       _buildSettingsTile(Icons.bluetooth_connected, "Smart Glasses Settings", badgeCount: "Connected",
-                        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const SmartGlassesSettingsScreen())),
+                        onTap: () async => Navigator.push(context, MaterialPageRoute(builder: (context) => const SmartGlassesSettingsScreen())),
                       ),
                       _buildDivider(),
                       _buildSettingsTile(Icons.accessibility_new, "Accessibility Preferences",
-                        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const AccessibilityPrefsScreen())),
+                        onTap: () async => Navigator.push(context, MaterialPageRoute(builder: (context) => const AccessibilityPrefsScreen())),
                       ),
                     ],
                   ),
@@ -90,7 +187,6 @@ class BlindProfileScreen extends StatelessWidget {
                 // Log Out
                 TextButton.icon(
                   onPressed: () async {
-                    // Show the confirmation pop-up first!
                     showDialog(
                       context: context,
                       builder: (BuildContext dialogContext) {
