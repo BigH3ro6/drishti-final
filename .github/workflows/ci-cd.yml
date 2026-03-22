@@ -44,7 +44,14 @@ jobs:
 
               sudo apt-get install -y docker-compose
 
+      - name: Create serviceAccount.json
+        run: |
+          echo '${{ secrets.GCP_SERVICE_ACCOUNT_JSON }}' > backend/flask_service/serviceAccount.json
 
+      - name: Create .env file for Docker
+        run: |
+          echo "GOOGLE_APPLICATION_CREDENTIALS=/app/serviceAccount.json" > backend/flask_service/.env
+          echo "PYTHONUNBUFFERED=1" >> backend/flask_service/.env
 
       - name: Build Docker Compose (Test)
 
@@ -53,26 +60,6 @@ jobs:
           cd backend/flask_service
 
           docker-compose build
-
-          
-
-      - name: Create serviceAccount.json
-
-        run: |
-
-          # Reconstruct the JSON file from the GitHub Secret
-
-          echo '${{ secrets.GCP_SERVICE_ACCOUNT_JSON }}' > backend/flask_service/serviceAccount.json
-
-
-
-      - name: Create .env file for Docker
-
-        run: |
-
-          # Create a .env file that points to the JSON file inside the container
-
-          echo "GOOGLE_APPLICATION_CREDENTIALS=/app/serviceAccount.json" > backend/flask_service/.env
 
 
 
