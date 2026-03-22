@@ -16,7 +16,7 @@ env:
 
   GCE_INSTANCE_NAME: ${{ secrets.GCE_INSTANCE_NAME }}
 
-  GCE_ZONE: ${{ secrets.GCE_ZONE }}
+  GCE_ZONE: us-central1-c
 
   DEPLOY_DIR: /home/drishti/backend
 
