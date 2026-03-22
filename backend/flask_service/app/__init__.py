@@ -5,7 +5,14 @@ import firebase_admin
 from firebase_admin import credentials, firestore
 from dotenv import load_dotenv
 
-env_path = os.path.join(os.path.dirname(__file__), '..', '.env')
+# 1. Get the absolute path of the directory one level up (the project root)
+base_dir = os.path.abspath(os.path.dirname(os.path.dirname(__file__)))
+
+# 2. Join it with '.env'
+env_path = os.path.join(base_dir, '.env')
+
+# 3. Print it to verify in your Docker logs, then load it
+print(f"Loading .env from: {env_path}")
 load_dotenv(env_path)
 
 def create_app():
