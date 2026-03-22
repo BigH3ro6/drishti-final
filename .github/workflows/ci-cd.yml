@@ -31,11 +31,19 @@ jobs:
         run: |
           cd backend/flask_service
           docker-compose up -d
+          sleep 10  # Give Docker a head start to initialize networking
 
       - name: Wait for Flask service to be ready
         run: |
-          timeout 60 bash -c 'until curl -f http://127.0.0.1:5000; do sleep 5; done'
+          # Use localhost instead of 127.0.0.1 to ensure local DNS resolution
+          timeout 60 bash -c 'until curl -sSf http://localhost:5000/; do echo "Waiting for Flask..."; sleep 5; done'
 
+      - name: Check Flask Logs on Failure
+        if: failure()
+        run: |
+          cd backend/flask_service
+          docker-compose logs backend
+          
       - name: Run health check
         run: |
           curl -f http://localhost:5000 || exit 1
