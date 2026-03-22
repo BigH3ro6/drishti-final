@@ -21,6 +21,7 @@ firmware/esp32-cam/.pio/
 firmware/esp32-cam/.vscode/
 
 # Machine Learning
+ml/datasets/
 *.zip
 ml_pipeline_Obstacle_det/dataset/
 
@@ -30,6 +31,24 @@ ml_pipeline_Obstacle_det/dataset/
 *.slnx
 *.sqlite
 CMakeWorkspaceSettings.json
+VSWorkspaceState.json
+
+# Currency detection dataset
+vision/currency_detection/data/
+
+# Ignore training checkpoints
+vision/currency_detection/models/*.pt
+!vision/currency_detection/models/best.pt
+
+# Virtual environment
+.venv/
+
+# Audio files
+*.mp3
+
+# Python cache
+__pycache__/
+*.pyc
 
 **/augmented_data/
 **/preprocessed_data/
