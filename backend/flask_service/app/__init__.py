@@ -7,8 +7,6 @@ from dotenv import load_dotenv
 
 env_path = os.path.join(os.path.dirname(__file__), '..', '.env')
 load_dotenv(env_path)
-print(f"DEBUG .env loaded from: {env_path}")
-print(f"DEBUG CLOUD_NAME: {os.getenv('CLOUDINARY_CLOUD_NAME')}")
 
 def create_app():
     app = Flask(__name__)

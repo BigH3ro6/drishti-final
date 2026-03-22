@@ -11,7 +11,6 @@ from cloudinary import uploader as cloudinary_uploader
 
 def init_storage(app):
     cloudinary_url = os.getenv('CLOUDINARY_URL')
-    print(f"DEBUG: CLOUDINARY_URL: {cloudinary_url}")
     
     if cloudinary_url:
         cloudinary.config().cloud_name = cloudinary.config().cloud_name
@@ -27,8 +26,7 @@ def init_storage(app):
         if len(credentials) >= 2:
             cloudinary.config().api_key = credentials[0]
             cloudinary.config().api_secret = credentials[1]
-    
-    print(f"DEBUG: Cloud name after config: {cloudinary.config().cloud_name}")
+
     
     app.cloudinary_configured = True
     return True
