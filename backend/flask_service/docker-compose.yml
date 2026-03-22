@@ -8,5 +8,5 @@ services:
     environment:
       - FLASK_ENV=development
       - PYTHONUNBUFFERED=1
-      - GOOGLE_APPLICATION_CREDENTIALS=serviceAccountKey.json
+      - GOOGLE_APPLICATION_CREDENTIALS=${GCA_Token}
       
