@@ -1,262 +1,142 @@
 name: GCP CI/CD Deploy Backend Flask Service
 
-
-
 on:
-
   push:
-
     branches: [ main ]
-
     
-
 env:
-
   PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
-
   GCE_INSTANCE_NAME: ${{ secrets.GCE_INSTANCE_NAME }}
-
   GCE_ZONE: ${{ secrets.GCE_ZONE }}
-
   DEPLOY_DIR: /home/drishti/backend
-
   GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-
-
 jobs:
-
   test:
-
     runs-on: ubuntu-latest
-
     steps:
-
       - name: Checkout code
-
         uses: actions/checkout@v4
 
       - name: Install Docker Compose
-
         run: |
+          sudo apt-get update
+          sudo apt-get install -y docker-compose
 
-              sudo apt-get update
-
-              sudo apt-get install -y docker-compose
-
-
-      - name: Create serviceAccount.json
-
+      - name: Generate Env and Credentials
         run: |
-
-          # Reconstruct the JSON file from the GitHub Secret
-
-          echo '${{ secrets.GCP_SERVICE_ACCOUNT_JSON }}' > backend/flask_service/serviceAccount.json
-
-
-
-      - name: Create .env file for Docker
-
-        run: |
-
-          # Create a .env file that points to the JSON file inside the container
-
-          echo "GOOGLE_APPLICATION_CREDENTIALS=/app/serviceAccount.json" > backend/flask_service/.env
-
-
+          cd backend/flask_service
+          
+          # Securely write the JSON Key
+          cat << 'EOF' > serviceAccount.json
+          ${{ secrets.GCP_SERVICE_ACCOUNT_JSON }}
+          EOF
+          
+          # Securely write the environment variables
+          cat << 'EOF' > .env
+          GOOGLE_APPLICATION_CREDENTIALS=/app/serviceAccount.json
+          PYTHONUNBUFFERED=1
+          FLASK_ENV=production
+          EOF
 
       - name: Build Docker Compose (Test)
-
         run: |
-
           cd backend/flask_service
-
           docker-compose build
 
-
-
       - name: Start services for testing
-
         run: |
-
           cd backend/flask_service
-
           docker-compose up -d
-
-          sleep 10  # Give Docker a head start to initialize networking
-
-
+          sleep 15  # Give Flask ample time to start
 
       - name: Wait for Flask service to be ready
-
         run: |
-
-          # Use localhost instead of 127.0.0.1 to ensure local DNS resolution
-
           timeout 60 bash -c 'until curl -sSf http://localhost:5000/; do echo "Waiting for Flask..."; sleep 5; done'
 
-
-
       - name: Check Flask Logs on Failure
-
         if: failure()
-
         run: |
-
           cd backend/flask_service
-
           docker-compose logs backend
-
           
-
       - name: Run health check
-
         run: |
-
           curl -f http://localhost:5000 || exit 1
 
-
-
       - name: Stop services
-
         run: |
-
           cd backend/flask_service
-
           docker-compose down
 
-
-
   deploy:
-
     needs: test
-
     runs-on: ubuntu-latest
-
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-
     
-
     steps:
-
       - name: Checkout code
-
         uses: actions/checkout@v4
 
-
-
       - name: Authenticate with GCP
-
         uses: google-github-actions/auth@v2
-
         with:
-
           credentials_json: ${{ secrets.GCP_SA_KEY }}
 
-
-
       - name: Set up Cloud SDK
-
         uses: google-github-actions/setup-gcloud@v2
 
-
-
       - name: Deploy to GCE Instance
-
         run: |
-
           gcloud compute ssh ${{ env.GCE_INSTANCE_NAME }} \
-
             --project=${{ env.PROJECT_ID }} \
-
             --zone=${{ env.GCE_ZONE }} \
-
             --tunnel-through-iap \
-
             --quiet \
-
             --command="
-
               # --- 1. PREPARE DEPLOYMENT DIRECTORY ---
-
               sudo mkdir -p ${{ env.DEPLOY_DIR }}
-
               sudo chown -R \$USER:\$USER ${{ env.DEPLOY_DIR }}
-
               cd ${{ env.DEPLOY_DIR }}
 
-
-
               # --- 2. CLONE OR UPDATE REPOSITORY ---
-
               if [ ! -d .git ]; then
-
                 echo '📦 First deployment: Cloning repository...'
-
                 git clone https://x-access-token:${{ env.GH_TOKEN }}@github.com/${{ github.repository }}.git .
-
               else
-
                 echo '🔄 Updating existing repository...'
-
                 git remote set-url origin https://x-access-token:${{ env.GH_TOKEN }}@github.com/${{ github.repository }}.git
-
                 git fetch origin main
-
                 git reset --hard origin/main
-
               fi
 
+              # --- 3. NAVIGATE TO NESTED BACKEND ---
+              # Using the double backend path for the server structure
+              cd backend/backend/flask_service
 
+              # --- 4. SECURELY CREATE CREDENTIALS ---
+              cat << 'EOF' > serviceAccount.json
+              ${{ secrets.GCP_SERVICE_ACCOUNT_JSON }}
+              EOF
 
-              # --- 3. NAVIGATE TO BACKEND AND PREPARE DOCKER ---
+              cat << 'EOF' > .env
+              GOOGLE_APPLICATION_CREDENTIALS=/app/serviceAccount.json
+              PYTHONUNBUFFERED=1
+              FLASK_ENV=production
+              EOF
 
-              cd ${{ env.DEPLOY_DIR }}/backend/flask_service
-
-
-
-              echo 'Creating credentials...'
-
-              echo '${{ secrets.GCP_SERVICE_ACCOUNT_JSON }}' > serviceAccount.json
-
-              echo 'GOOGLE_APPLICATION_CREDENTIALS=/app/serviceAccount.json' > .env
-
-              echo 'PYTHONUNBUFFERED=1' >> .env
-
-
-
-
-
-              # --- 4. BUILD AND RUN DOCKER COMPOSE ---
-
+              # --- 5. BUILD AND RUN DOCKER COMPOSE ---
               echo '🐳 Building and starting services with docker-compose...'
-
               export DOCKER_BUILDKIT=1
+              sudo docker-compose pull
+              sudo docker-compose up -d --build --remove-orphans
 
-              sudo docker compose -f ${{ env.DEPLOY_DIR }}/backend/flask_service/docker-compose.yml pull
-
-              sudo docker compose -f ${{ env.DEPLOY_DIR }}/backend/flask_service/docker-compose.yml up -d --build --remove-orphans
-
-
-
-              # --- 5. CLEANUP ---
-
+              # --- 6. CLEANUP & VERIFY ---
               echo '🧹 Cleaning up unused Docker images...'
-
               sudo docker image prune -f
 
-
-
-              # --- 6. VERIFY DEPLOYMENT ---
-
               echo '✅ Waiting for Flask service to be ready...'
-
               sleep 5
-
-              sudo docker compose ps
-
-
-
+              sudo docker-compose ps
               echo '✅ Deployment completed successfully!'
-
             "
