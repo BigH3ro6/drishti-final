@@ -45,17 +45,6 @@ jobs:
               sudo apt-get install -y docker-compose
 
 
-
-      - name: Build Docker Compose (Test)
-
-        run: |
-
-          cd backend/flask_service
-
-          docker-compose build
-
-          
-
       - name: Create serviceAccount.json
 
         run: |
@@ -73,6 +62,16 @@ jobs:
           # Create a .env file that points to the JSON file inside the container
 
           echo "GOOGLE_APPLICATION_CREDENTIALS=/app/serviceAccount.json" > backend/flask_service/.env
+
+
+
+      - name: Build Docker Compose (Test)
+
+        run: |
+
+          cd backend/flask_service
+
+          docker-compose build
 
 
 
