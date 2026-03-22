@@ -4,12 +4,14 @@ class AppColors {
   // --- The Deep Sea Glass Theme (Optimized for White Text) ---
   
   // A deep, muted ocean blue
-  static const Color primaryDark = Color(0xFF2C5E7A); 
+  static const Color primaryDark = Color.fromARGB(255, 2, 177, 174); 
   
   // A deep, muted seafoam green
-  static const Color primaryLight = Color(0xFF3A7558); 
+  static const Color primaryLight = Color.fromARGB(255, 4, 45, 25); 
   
   // Text Colors (Kept crisp and white!)
+
+  
   static const Color textWhite = Colors.white;
   static const Color textGray = Colors.white70;
 
