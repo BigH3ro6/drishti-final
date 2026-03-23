@@ -63,7 +63,8 @@ jobs:
         run: |
           cd backend/flask_service
           docker compose down
- deploy:
+
+  deploy:
     needs: test
     runs-on: ubuntu-latest
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
@@ -80,7 +81,6 @@ jobs:
       - name: Set up Cloud SDK
         uses: google-github-actions/setup-gcloud@v2
 
-      # ↓ NEW STEP 1
       - name: Write .env to temp file
         run: |
           cat > /tmp/deploy.env << 'EOF'
@@ -93,7 +93,6 @@ jobs:
           FIREBASE_STORAGE_BUCKET=${{ secrets.FIREBASE_STORAGE_BUCKET }}
           EOF
 
-      # ↓ NEW STEP 2
       - name: Copy .env to VM
         run: |
           gcloud compute scp /tmp/deploy.env ${{ env.GCE_INSTANCE_NAME }}:/tmp/deploy.env \
@@ -102,7 +101,6 @@ jobs:
             --tunnel-through-iap \
             --quiet
 
-      # ↓ YOUR EXISTING STEP (just remove the .env writing from inside it)
       - name: Deploy to GCE Instance
         run: |
           gcloud compute ssh ${{ env.GCE_INSTANCE_NAME }} \
@@ -116,8 +114,10 @@ jobs:
               cd ${{ env.DEPLOY_DIR }}
 
               if [ ! -d .git ]; then
+                echo '📦 First deployment: Cloning repository...'
                 git clone https://x-access-token:${{ env.GH_TOKEN }}@github.com/${{ github.repository }}.git .
               else
+                echo '🔄 Updating existing repository...'
                 git remote set-url origin https://x-access-token:${{ env.GH_TOKEN }}@github.com/${{ github.repository }}.git
                 git fetch origin main
                 git reset --hard origin/main
