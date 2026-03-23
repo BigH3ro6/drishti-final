@@ -6,7 +6,7 @@ from firebase_admin import credentials, firestore
 from dotenv import load_dotenv
 
 # 1. Get the absolute path of the directory one level up (the project root)
-env_path = os.path.join(os.path.dirname(_file_), '..', '.env')
+env_path = os.path.join(os.path.dirname(__file__), '..', '.env')
 
 load_dotenv(env_path)
 
