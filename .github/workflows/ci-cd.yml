@@ -3,13 +3,13 @@ name: GCP CI/CD Deploy Backend Flask Service
 on:
   push:
     branches: [ main ]
-    
+
 env:
   PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
   GCE_INSTANCE_NAME: ${{ secrets.GCE_INSTANCE_NAME }}
   GCE_ZONE: ${{ secrets.GCE_ZONE }}
   DEPLOY_DIR: /home/drishti/backend
-  GH_TOKEN: ${{ secrets.GCA_TOKEN }}
+  GH_TOKEN: ${{ secrets.GH_TOKEN }} 
 
 jobs:
   test:
@@ -34,34 +34,13 @@ jobs:
           FIREBASE_STORAGE_BUCKET=${{ secrets.FIREBASE_STORAGE_BUCKET }}
           EOF
 
-      - name: Build Docker Compose (Test)
+      - name: Build and Test Services
         run: |
           cd backend/flask_service
-          docker compose build
-
-      - name: Start services for testing
-        run: |
-          cd backend/flask_service
-          docker compose up -d
+          docker compose up -d --build
           sleep 10
-
-      - name: Wait for Flask service to be ready
-        run: |
-          timeout 60 bash -c 'until curl -sSf http://localhost:5000/; do echo "Waiting for Flask..."; sleep 5; done'
-
-      - name: Check Flask Logs on Failure
-        if: failure()
-        run: |
-          cd backend/flask_service
-          docker compose logs backend
-
-      - name: Run health check
-        run: |
-          curl -f http://localhost:5000 || exit 1
-
-      - name: Stop services
-        run: |
-          cd backend/flask_service
+          # Health check
+          curl -f http://localhost:5000 || (docker compose logs && exit 1)
           docker compose down
 
   deploy:
@@ -81,8 +60,9 @@ jobs:
       - name: Set up Cloud SDK
         uses: google-github-actions/setup-gcloud@v2
 
-      - name: Write .env to temp file
+      - name: Prepare Config Files for VM
         run: |
+          # Generate the .env specifically for the VM deployment
           cat > /tmp/deploy.env << 'EOF'
           GOOGLE_APPLICATION_CREDENTIALS=/app/serviceAccount.json
           CLOUDINARY_URL=${{ secrets.CLOUDINARY_URL }}
@@ -92,16 +72,20 @@ jobs:
           OBSTACLE_PREDICT_IMAGE_URL=${{ secrets.OBSTACLE_PREDICT_IMAGE_URL }}
           FIREBASE_STORAGE_BUCKET=${{ secrets.FIREBASE_STORAGE_BUCKET }}
           EOF
+          
+          # Create the Service Account JSON from secrets
+          echo '${{ secrets.GCP_SERVICE_ACCOUNT_JSON }}' > /tmp/serviceAccount.json
 
-      - name: Copy .env to VM
+      - name: Copy Configs to VM
         run: |
-          gcloud compute scp /tmp/deploy.env ${{ env.GCE_INSTANCE_NAME }}:/tmp/deploy.env \
+          # Uploading both files to /tmp on the VM first
+          gcloud compute scp /tmp/deploy.env /tmp/serviceAccount.json ${{ env.GCE_INSTANCE_NAME }}:/tmp/ \
             --project=${{ env.PROJECT_ID }} \
             --zone=${{ env.GCE_ZONE }} \
             --tunnel-through-iap \
             --quiet
 
-      - name: Deploy to GCE Instance
+      - name: Execute Remote Deployment
         run: |
           gcloud compute ssh ${{ env.GCE_INSTANCE_NAME }} \
             --project=${{ env.PROJECT_ID }} \
@@ -115,21 +99,22 @@ jobs:
 
               if [ ! -d .git ]; then
                 echo '📦 First deployment: Cloning repository...'
-                git clone https://x-access-token:${{ env.GH_TOKEN }}@github.com/${{ github.repository }}.git .
+                git clone \"https://x-access-token:${{ env.GH_TOKEN }}@github.com/${{ github.repository }}.git\" .
               else
-                echo '🔄 Updating existing repository...'
-                git remote set-url origin https://x-access-token:${{ env.GH_TOKEN }}@github.com/${{ github.repository }}.git
+                echo '🔄 Updating repository...'
+                git remote set-url origin \"https://x-access-token:${{ env.GH_TOKEN }}@github.com/${{ github.repository }}.git\"
                 git fetch origin main
                 git reset --hard origin/main
               fi
 
+              # Move files from /tmp to the service directory
               cd ${{ env.DEPLOY_DIR }}/backend/flask_service
-              cp /tmp/deploy.env ./.env
+              mv /tmp/deploy.env ./.env
+              mv /tmp/serviceAccount.json ./serviceAccount.json
 
               export DOCKER_BUILDKIT=1
-              sudo docker compose -f ${{ env.DEPLOY_DIR }}/backend/flask_service/docker-compose.yml up -d --build --remove-orphans
+              sudo docker compose up -d --build --remove-orphans
               sudo docker image prune -f
-              sleep 5
-              sudo docker compose ps
-              echo '✅ Deployment completed successfully!'
+              
+              echo '✅ Deployment successful!'
             "
