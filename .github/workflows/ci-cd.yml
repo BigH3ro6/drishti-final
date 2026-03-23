@@ -9,7 +9,7 @@ env:
   GCE_INSTANCE_NAME: ${{ secrets.GCE_INSTANCE_NAME }}
   GCE_ZONE: ${{ secrets.GCE_ZONE }}
   DEPLOY_DIR: /home/drishti/backend
-  GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  GH_TOKEN: ${{ secrets.GCA_TOKEN }}
 
 jobs:
   test:
@@ -18,10 +18,9 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Install Docker Compose
+      - name: Create serviceAccount.json
         run: |
-          sudo apt-get update
-          sudo apt-get install -y docker-compose
+          echo '${{ secrets.GCP_SERVICE_ACCOUNT_JSON }}' > backend/flask_service/serviceAccount.json
 
       - name: Create .env file for Docker
         run: |
@@ -32,21 +31,18 @@ jobs:
           OPENWEATHERMAP_API_KEY=${{ secrets.OPENWEATHERMAP_API_KEY }}
           CURRENCY_API_URL=${{ secrets.CURRENCY_API_URL }}
           OBSTACLE_PREDICT_IMAGE_URL=${{ secrets.OBSTACLE_PREDICT_IMAGE_URL }}
+          FIREBASE_STORAGE_BUCKET=${{ secrets.FIREBASE_STORAGE_BUCKET }}
           EOF
-
-      - name: Create dummy serviceAccount.json for test
-        run: |
-          echo '{"type":"service_account"}' > backend/flask_service/serviceAccount.json
 
       - name: Build Docker Compose (Test)
         run: |
           cd backend/flask_service
-          docker-compose build
+          docker compose build
 
       - name: Start services for testing
         run: |
           cd backend/flask_service
-          docker-compose up -d
+          docker compose up -d
           sleep 10
 
       - name: Wait for Flask service to be ready
@@ -57,7 +53,7 @@ jobs:
         if: failure()
         run: |
           cd backend/flask_service
-          docker-compose logs backend
+          docker compose logs backend
 
       - name: Run health check
         run: |
@@ -66,7 +62,7 @@ jobs:
       - name: Stop services
         run: |
           cd backend/flask_service
-          docker-compose down
+          docker compose down
 
   deploy:
     needs: test
@@ -115,12 +111,12 @@ jobs:
               # --- 4. WRITE .env FILE ---
               echo '🔑 Writing .env file...'
               cat > .env << 'ENVEOF'
-              GOOGLE_APPLICATION_CREDENTIALS=/app/serviceAccount.json
               CLOUDINARY_URL=${{ secrets.CLOUDINARY_URL }}
               CLOUDINARY_CLOUD_NAME=${{ secrets.CLOUDINARY_CLOUD_NAME }}
               OPENWEATHERMAP_API_KEY=${{ secrets.OPENWEATHERMAP_API_KEY }}
               CURRENCY_API_URL=${{ secrets.CURRENCY_API_URL }}
               OBSTACLE_PREDICT_IMAGE_URL=${{ secrets.OBSTACLE_PREDICT_IMAGE_URL }}
+              FIREBASE_STORAGE_BUCKET=${{ secrets.FIREBASE_STORAGE_BUCKET }}
               ENVEOF
 
               # --- 5. BUILD AND RUN DOCKER COMPOSE ---
