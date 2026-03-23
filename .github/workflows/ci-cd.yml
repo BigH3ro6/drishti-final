@@ -81,6 +81,28 @@ jobs:
       - name: Set up Cloud SDK
         uses: google-github-actions/setup-gcloud@v2
 
+      - name: Dep- name: Write .env to temp file
+        run: |
+          cat > /tmp/deploy.env << 'EOF'
+          GOOGLE_APPLICATION_CREDENTIALS=/app/serviceAccount.json
+          CLOUDINARY_URL=${{ secrets.CLOUDINARY_URL }}
+          CLOUDINARY_CLOUD_NAME=${{ secrets.CLOUDINARY_CLOUD_NAME }}
+          OPENWEATHERMAP_API_KEY=${{ secrets.OPENWEATHERMAP_API_KEY }}
+          CURRENCY_API_URL=${{ secrets.CURRENCY_API_URL }}
+          OBSTACLE_PREDICT_IMAGE_URL=${{ secrets.OBSTACLE_PREDICT_IMAGE_URL }}
+          FIREBASE_STORAGE_BUCKET=${{ secrets.FIREBASE_STORAGE_BUCKET }}
+          EOF
+
+      # ↓ NEW STEP 2
+      - name: Copy .env to VM
+        run: |
+          gcloud compute scp /tmp/deploy.env ${{ env.GCE_INSTANCE_NAME }}:/tmp/deploy.env \
+            --project=${{ env.PROJECT_ID }} \
+            --zone=${{ env.GCE_ZONE }} \
+            --tunnel-through-iap \
+            --quiet
+
+      # ↓ YOUR EXISTING STEP (just remove the .env writing from inside it)
       - name: Deploy to GCE Instance
         run: |
           gcloud compute ssh ${{ env.GCE_INSTANCE_NAME }} \
@@ -89,47 +111,24 @@ jobs:
             --tunnel-through-iap \
             --quiet \
             --command="
-              # --- 1. PREPARE DEPLOYMENT DIRECTORY ---
               sudo mkdir -p ${{ env.DEPLOY_DIR }}
               sudo chown -R \$USER:\$USER ${{ env.DEPLOY_DIR }}
               cd ${{ env.DEPLOY_DIR }}
 
-              # --- 2. CLONE OR UPDATE REPOSITORY ---
               if [ ! -d .git ]; then
-                echo '📦 First deployment: Cloning repository...'
                 git clone https://x-access-token:${{ env.GH_TOKEN }}@github.com/${{ github.repository }}.git .
               else
-                echo '🔄 Updating existing repository...'
                 git remote set-url origin https://x-access-token:${{ env.GH_TOKEN }}@github.com/${{ github.repository }}.git
                 git fetch origin main
                 git reset --hard origin/main
               fi
 
-              # --- 3. NAVIGATE TO SERVICE DIR ---
               cd ${{ env.DEPLOY_DIR }}/backend/flask_service
+              cp /tmp/deploy.env ./.env
 
-              # --- 4. WRITE .env FILE ---
-              echo '🔑 Writing .env file...'
-              cat > .env << 'ENVEOF'
-              CLOUDINARY_URL=${{ secrets.CLOUDINARY_URL }}
-              CLOUDINARY_CLOUD_NAME=${{ secrets.CLOUDINARY_CLOUD_NAME }}
-              OPENWEATHERMAP_API_KEY=${{ secrets.OPENWEATHERMAP_API_KEY }}
-              CURRENCY_API_URL=${{ secrets.CURRENCY_API_URL }}
-              OBSTACLE_PREDICT_IMAGE_URL=${{ secrets.OBSTACLE_PREDICT_IMAGE_URL }}
-              FIREBASE_STORAGE_BUCKET=${{ secrets.FIREBASE_STORAGE_BUCKET }}
-              ENVEOF
-
-              # --- 5. BUILD AND RUN DOCKER COMPOSE ---
-              echo '🐳 Building and starting services...'
               export DOCKER_BUILDKIT=1
               sudo docker compose -f ${{ env.DEPLOY_DIR }}/backend/flask_service/docker-compose.yml up -d --build --remove-orphans
-
-              # --- 6. CLEANUP ---
-              echo '🧹 Cleaning up unused Docker images...'
               sudo docker image prune -f
-
-              # --- 7. VERIFY DEPLOYMENT ---
-              echo '✅ Waiting for Flask service to be ready...'
               sleep 5
               sudo docker compose ps
               echo '✅ Deployment completed successfully!'
