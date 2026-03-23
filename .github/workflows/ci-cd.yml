@@ -63,8 +63,7 @@ jobs:
         run: |
           cd backend/flask_service
           docker compose down
-
-  deploy:
+ deploy:
     needs: test
     runs-on: ubuntu-latest
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
@@ -81,7 +80,8 @@ jobs:
       - name: Set up Cloud SDK
         uses: google-github-actions/setup-gcloud@v2
 
-      - name: Dep- name: Write .env to temp file
+      # ↓ NEW STEP 1
+      - name: Write .env to temp file
         run: |
           cat > /tmp/deploy.env << 'EOF'
           GOOGLE_APPLICATION_CREDENTIALS=/app/serviceAccount.json
