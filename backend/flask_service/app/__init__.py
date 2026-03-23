@@ -8,7 +8,7 @@ from dotenv import load_dotenv
 # 1. Get the absolute path of the directory one level up (the project root)
 env_path = os.path.join(os.path.dirname(_file_), '..', '.env')
 
-load_dotenv(env_path, override=False)
+load_dotenv(env_path)
 
 def create_app():
     app = Flask(__name__)
